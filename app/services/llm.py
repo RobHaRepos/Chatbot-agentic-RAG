@@ -19,6 +19,7 @@ class AiChatService:
         self.api_key = os.getenv("OPEN_API_KEY")
         self.max_tokens = max_tokens
         self.temperature = temperature
+        self.llm = define_llm(self.model_class, self.model_name, self.temperature, self.max_tokens)
 
     def build_prompt(self, question: str, context: str = "", template: str | None = None) -> str:
         if template is None:
@@ -35,9 +36,32 @@ class AiChatService:
                     "context": context  
                 })
         else:
-            prompt = ChatPromptTemplate.from_template(template)
+            prompt = ChatPromptTemplate.from_messages(template)
+            prompt = prompt.invoke({
+                    "question": question,
+                    "context": context  
+                })
         return prompt
 
-    def generate(self, prompt: str) -> str:
-        llm = define_llm(self.model_class, self.model_name, self.temperature, self.max_tokens)
-        return llm(prompt)
+    def generate(self, prompt) -> str:
+        return self.llm.invoke(prompt.messages)
+    
+    def generate_search_query(self, user_input: str, retrieved_information: str = "", template: str | None = None) -> str:
+        if not template:
+            template = ([
+                ("system", "You are a helpful AI assistant for a phone shop. \
+                Given the user question and the information from the documents, \
+                generate a search query that would help you find more relevant information. \n \
+                USER QUESTION: {user_input} \n \
+                INFORMATION FROM DOCUMENTS: {retrieved_information} \n\n \
+                Produce a short (3-8 words) search query"), 
+            ])
+            
+        prompt = ChatPromptTemplate.from_messages(template)
+        prompt = prompt.invoke({
+                "user_input": user_input,
+                "retrieved_information": retrieved_information  
+            })
+    
+        response = self.llm.invoke(prompt.messages)
+        return response.content
