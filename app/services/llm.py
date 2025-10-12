@@ -10,8 +10,6 @@ def define_llm(Model=ChatOpenAI, model_name=MODEL_NAME_LLM, temperature=TEMPERAT
         max_completion_tokens=max_tokens
     )
     return llm
-
-
 class AiChatService:
     def __init__(self, Model, model_name: str, api_key: str, max_tokens:int, temperature: float):
         self.model_name = model_name

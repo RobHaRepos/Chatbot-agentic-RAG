@@ -24,12 +24,10 @@ def build_workflow(vector_store, ):
         }
     )
     
-    wf.add_conditional_edges(
-        "retrieve",
-        grade_documents, # A function that grades the retrieved documents
-    )
-    what do I do with this 
-    It this doing it right?
+#    wf.add_conditional_edges(
+#        "retrieve",
+#        grade_documents, # A function that grades the retrieved documents
+#    )
     
     wf.add_edge("generate_answer", END)
     wf.add_edge("rewrite_question", "generate_query_or_respond")
