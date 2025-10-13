@@ -1,21 +1,21 @@
-from typing import Optional, Callable
-from app.rag.retriever import create_retriever_from_vectorstore, retrieve_documents_as_list
-from app.config import NUMBER_OF_DOCUMENTS_TO_RETRIEVE as k
 from langgraph.graph import StateGraph, START, END, MessagesState
 from langgraph.prebuilt import tools_condition, ToolNode
-
-def retriever_node(vector_store, query:str, k_override: Optional[int] = None) -> list:
-    retriever = create_retriever_from_vectorstore(vector_store, k_search=k_override if k_override else k)
-    return retrieve_documents_as_list(query, retriever)
+from app.langgraph.nodes import (
+    node_retrieve_list,
+    node_retrieve_string,
+    node_generate_answer,
+    node_rewrite_question,
+    node_query_or_respond,
+)
 
 def build_workflow(vector_store, ):
     wf = StateGraph(MessagesState)
     
-    wf.add_node("generate_query_or_respond", )    
-    wf.add_node("retrieve", ToolNode([retriever_node]))
-    wf.add_node("rewrite_question", )
-    wf.add_node("answer", )
-    
+    wf.add_node("generate_query_or_respond", node_query_or_respond)    
+    wf.add_node("retrieve", ToolNode(node_retrieve_string, vector_store=vector_store))
+    wf.add_node("rewrite_question", node_rewrite_question)
+    wf.add_node("answer", node_generate_answer)
+
     wf.add_edge(START, "generate_query_or_respond")
     wf.add_conditional_edges("generate_query_or_respond",
         tools_condition,
