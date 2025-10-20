@@ -1,6 +1,5 @@
 from app.config import PATH_TO_FAISS_INDEX, MODEL_NAME_EMBEDDING
 from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_community.vectorstores import FAISS
 from types import SimpleNamespace
 from app.rag.retriever import load_faiss_index
 

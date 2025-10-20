@@ -2,6 +2,7 @@ import json
 from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from app.config import MODEL_NAME_LLM, TEMPERATURE_LLM, MAX_TOKENS
+from app.langgraph.tools import get_tools
 
 def build_llm(Model=ChatOpenAI, model_name=MODEL_NAME_LLM, temperature=TEMPERATURE_LLM, max_tokens=MAX_TOKENS):
     llm = Model(
@@ -9,7 +10,10 @@ def build_llm(Model=ChatOpenAI, model_name=MODEL_NAME_LLM, temperature=TEMPERATU
         temperature=temperature,
         max_completion_tokens=max_tokens
     )
-    return llm
+    tools = get_tools() 
+    llm_with_tools = llm.bind_tools(tools)
+    #llm_with_tools = llm
+    return llm_with_tools
 class AiChatService:
     def __init__(self, Model, model_name: str, api_key: str, max_tokens:int, temperature: float):
         self.model_name = model_name
@@ -19,7 +23,7 @@ class AiChatService:
         self.temperature = temperature
         self.llm = build_llm(self.model_class, self.model_name, self.temperature, self.max_tokens)
 
-    def build_prompt(self, question: str, context: str = "", template: str | None = None):
+    def build_prompt(self, question: str, context: str = "", template = None):
         if template is None:
             template = ([
             ("system", "You are a helpful AI assistant for a phone shop. Use the following pieces of context to answer the user question. \
@@ -39,12 +43,14 @@ class AiChatService:
                     "question": question,
                     "context": context  
                 })
+
+        print(prompt)
         return prompt
 
     def generate(self, prompt: ChatPromptTemplate) -> str:
         return self.llm.invoke(prompt.messages)
-    
-    def generate_search_query(self, user_input: str, retrieved_information: str = "", template: str | None = None) -> str:
+
+    def generate_search_query(self, user_input: str, retrieved_information: str = "", template: list = []) -> str:
         if not template:
             template = ([
                 ("system", "You are a helpful AI assistant for a phone shop. \
@@ -63,16 +69,16 @@ class AiChatService:
     
         response = self.llm.invoke(prompt.messages)
         return response.content
-    
-    def query_or_respond(self, user_input: str, template: str | None = None) -> str:
+
+    def query_or_respond(self, user_input: str, template: list = None) -> str:
         if not template:
             template = ([
             ("system", "You are a helpful AI assistant for a phone shop. Given the user question, "
                  "decide if you can answer it directly or if you need to search for more information. "
                  "If you can answer it directly, return a JSON object: "
-                 '{"action":"answer","answer":"<your answer>"} '
-                 "If you need to search for more information, return a JSON object: "
-                 '{"action":"tool","tool":"retrieve","query":"<search query>"} '
+                 '{"decision":"answer","answer":"<your answer>"} '
+                 "If you need to search for more information in vectorstore, return a JSON object: "
+                 '{"decision":"retrieve","query":"<search query>"} '
                  "Return only valid JSON in the response body."),
             ])
             
@@ -95,9 +101,9 @@ class AiChatService:
         # fallback: simple prefix parsing
         t = text
         if t.upper().startswith("ANSWER:"):
-            return {"action": "answer", "answer": t[len("ANSWER:"):].strip()}
+            return {"decision": "answer", "answer": t[len("ANSWER:"):].strip()}
         if t.upper().startswith("SEARCH:"):
-            return {"action": "tool", "tool": "retrieve", "query": t[len("SEARCH:"):].strip()}
+            return {"decision": "retrieve", "query": t[len("SEARCH:"):].strip()}
 
         # fallback default
-        return {"action": "answer", "answer": t}
+        return {"decision": "answer", "answer": t}

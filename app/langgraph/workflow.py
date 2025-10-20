@@ -1,0 +1,50 @@
+from langgraph.graph import StateGraph, START, END, MessagesState
+from langgraph.prebuilt import ToolNode
+from app.langgraph.nodes import (
+    node_retrieve_list,
+    node_retrieve_string,
+    node_generate_answer,
+    node_rewrite_question,
+    node_query_or_respond,
+    node_ask_clarify
+)
+from app.langgraph.tools import get_tools
+
+def decision_router(state: MessagesState):
+    decision = getattr(state, "decision", None)
+   
+    if decision == "clarify":
+        return "clarify"
+    elif decision == "answer":
+        return "answer"
+    elif decision == "retrieve":
+        return "retrieve"
+    
+    return END
+
+def build_workflow():
+    tools = get_tools()
+    wf = StateGraph(MessagesState)
+    
+    wf.add_node("generate_query_or_respond", node_query_or_respond)    
+    wf.add_node("retrieve", ToolNode(tools=tools))
+    wf.add_node("rewrite_question", node_rewrite_question)
+    wf.add_node("answer", node_generate_answer)
+    wf.add_node("clarify", node_ask_clarify)
+
+    wf.add_edge(START, "generate_query_or_respond")
+    wf.add_conditional_edges("generate_query_or_respond", 
+                             decision_router,{
+                                "retrieve": "retrieve",
+                                "clarify": "clarify",
+                                "answer": "answer",
+                                END: END,
+                            })
+    #Add edge: retrieve --> evaluate if enough info to answer --> answer or rewrite_question
+    
+    wf.add_edge("retrieve", "answer")
+    wf.add_edge("answer", END)
+    wf.add_edge("clarify", END)
+    
+    graph = wf.compile()
+    return graph

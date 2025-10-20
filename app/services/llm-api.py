@@ -1,13 +1,12 @@
-import os
 from langchain_openai import ChatOpenAI
 from fastapi import FastAPI 
 from pydantic import BaseModel
 from app.services.llm import AiChatService
-from app.config import MODEL_NAME_LLM, TEMPERATURE_LLM, MAX_TOKENS
+from app.config import MODEL_NAME_LLM, TEMPERATURE_LLM, MAX_TOKENS, API_KEY_LLM
 
 app = FastAPI()
 
-llm_service = AiChatService(Model=ChatOpenAI, model_name=MODEL_NAME_LLM, api_key=os.getenv("OPEN_API_KEY"), max_tokens=MAX_TOKENS, temperature=TEMPERATURE_LLM)
+llm_service = AiChatService(Model=ChatOpenAI, model_name=MODEL_NAME_LLM, api_key=API_KEY_LLM, max_tokens=MAX_TOKENS, temperature=TEMPERATURE_LLM)
 
 class GenRequest(BaseModel):
     prompt: str

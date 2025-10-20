@@ -1,0 +1,22 @@
+version: '3.8'
+services: 
+  retriever:
+    build: .
+    image: my_retriever:latest
+    ports:
+      - "8001:8001"
+    environment:
+      PATH_TO_FAISS_INDEX: /data/faiss_index
+      MODEL_NAME_EMBEDDING: "sentence-transformers/all-MiniLM-L6-v2"
+      NUMBER_OF_DOCUMENTS_TO_RETRIEVE: 5
+    volumes:
+      - ../faiss_Hugging_index:/data/faiss_index:ro
+      - hf_cache:/root/.cache/huggingface
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8001/ready || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    restart: unless-stopped
+volumes:
+  hf_cache:

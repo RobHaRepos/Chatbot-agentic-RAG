@@ -8,22 +8,22 @@ from app.rag.retriever import SearchRequest
 def test_retrieve_documents_as_string():
     embeddings = HuggingFaceEmbeddings(model_name=MODEL_NAME_EMBEDDING)
     retriever_module.vector_store = load_faiss_index(PATH_TO_FAISS_INDEX, embeddings)
-    retriever = retriever_module.vector_store.as_retriever(search_type="similarity", search_kwargs={"k": 5})
     req = SearchRequest(query="What are the best Iphones?", k=5)
 
-    docs = retriever_module.retrieve_documents_as_string(req, retriever)
-    print(type(docs))
-    print(docs)
-    assert docs is not None and len(docs) > 0
-    assert isinstance(docs, str)
-    
+    docs = retriever_module.retrieve_documents_as_string(req)
+    doc_string = docs.get("documents", "")
+    print(type(doc_string))
+    print(doc_string)
+    assert doc_string is not None and len(doc_string) > 0
+    assert isinstance(doc_string, str)
+
 def test_retrieve_documents_as_list():
     embeddings = HuggingFaceEmbeddings(model_name=MODEL_NAME_EMBEDDING)
     retriever_module.vector_store = load_faiss_index(PATH_TO_FAISS_INDEX, embeddings)
-    retriever = retriever_module.vector_store.as_retriever(search_type="similarity", search_kwargs={"k": 5})
     req = SearchRequest(query="What are the best Iphones?", k=5)
-    docs = retriever_module.retrieve_documents_as_list(req, retriever)
-    print(type(docs))
-    print(docs)
-    assert docs is not None and len(docs) > 0  
-    assert isinstance(docs, list) 
+    docs = retriever_module.retrieve_documents_as_list(req)
+    doc_list = docs.documents
+    print(type(doc_list))
+    print(doc_list)
+    assert doc_list is not None and len(doc_list) > 0
+    assert isinstance(doc_list, list)
