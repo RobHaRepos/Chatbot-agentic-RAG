@@ -1,9 +1,25 @@
+import requests
+import pytest
+
 from app.rag.retriever import load_faiss_index
 from app.config import PATH_TO_FAISS_INDEX, MODEL_NAME_EMBEDDING
 from langchain_huggingface import HuggingFaceEmbeddings
 
 import app.rag.retriever as retriever_module
 from app.rag.retriever import SearchRequest
+
+BASE_URL = "http://localhost:8001"
+PAYLOAD = {
+    "query": "What are the newest Iphones?",
+    "k": 10
+}
+
+def _service_up() -> bool:
+    try:
+        r = requests.get(f"{BASE_URL}/health", timeout=2)
+        return r.status_code == 200
+    except requests.RequestException:
+        return False
 
 def test_retrieve_documents_as_string():
     embeddings = HuggingFaceEmbeddings(model_name=MODEL_NAME_EMBEDDING)
@@ -27,3 +43,13 @@ def test_retrieve_documents_as_list():
     print(doc_list)
     assert doc_list is not None and len(doc_list) > 0
     assert isinstance(doc_list, list)
+
+@pytest.mark.skipif(not _service_up(), reason="Retriever service is not running")
+def test_retrieve_documents_string_api():
+    resp = requests.post(f"{BASE_URL}/retrieve_documents_string", json=PAYLOAD, timeout=10)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "documents" in data
+    assert isinstance(data["documents"], str)
+    assert data["documents"].strip() != "", "Retrieved document string should not be empty"
+    

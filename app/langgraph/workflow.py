@@ -5,7 +5,7 @@ from app.langgraph.nodes import (
     node_retrieve_string,
     node_generate_answer,
     node_rewrite_question,
-    node_query_or_respond,
+    node_retrieve_or_respond,
     node_ask_clarify
 )
 from app.langgraph.tools import get_tools
@@ -25,15 +25,15 @@ def decision_router(state: MessagesState):
 def build_workflow():
     tools = get_tools()
     wf = StateGraph(MessagesState)
-    
-    wf.add_node("generate_query_or_respond", node_query_or_respond)    
+
+    wf.add_node("generate_retrieve_or_respond", node_retrieve_or_respond)
     wf.add_node("retrieve", ToolNode(tools=tools))
     wf.add_node("rewrite_question", node_rewrite_question)
     wf.add_node("answer", node_generate_answer)
     wf.add_node("clarify", node_ask_clarify)
 
-    wf.add_edge(START, "generate_query_or_respond")
-    wf.add_conditional_edges("generate_query_or_respond", 
+    wf.add_edge(START, "generate_retrieve_or_respond")
+    wf.add_conditional_edges("generate_retrieve_or_respond", 
                              decision_router,{
                                 "retrieve": "retrieve",
                                 "clarify": "clarify",

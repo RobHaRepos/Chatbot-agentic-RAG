@@ -3,6 +3,24 @@ from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from app.config import MODEL_NAME_LLM, TEMPERATURE_LLM, MAX_TOKENS
 from app.langgraph.tools import get_tools
+from typing import Any, Optional, Dict
+
+def extract_llm_response_content(template: Any, variables: Dict[str, Any], llm: Any) -> str:
+    prompt = ChatPromptTemplate.from_messages(template)
+    prompt = prompt.invoke(variables)
+
+    messages = getattr(prompt, "to_messages", None)
+    if callable(messages):
+        messages = prompt.to_messages()
+    else:
+        messages = getattr(prompt, "messages", None)
+    
+    if messages is None:
+        raise TypeError("Unsupported prompt type: expected a rendered PromptValue or ChatPromptTemplate")
+
+    response = llm.invoke(messages)
+    content = getattr(response, "content", "").strip()
+    return str(content)
 
 def build_llm(Model=ChatOpenAI, model_name=MODEL_NAME_LLM, temperature=TEMPERATURE_LLM, max_tokens=MAX_TOKENS):
     llm = Model(
@@ -15,7 +33,7 @@ def build_llm(Model=ChatOpenAI, model_name=MODEL_NAME_LLM, temperature=TEMPERATU
     #llm_with_tools = llm
     return llm_with_tools
 class AiChatService:
-    def __init__(self, Model, model_name: str, api_key: str, max_tokens:int, temperature: float):
+    def __init__(self, Model, model_name: str, api_key: str | None, max_tokens:int, temperature: float):
         self.model_name = model_name
         self.model_class = Model
         self.api_key = api_key
@@ -47,8 +65,21 @@ class AiChatService:
         print(prompt)
         return prompt
 
-    def generate(self, prompt: ChatPromptTemplate) -> str:
+    def generate(self, prompt: Any) -> Any:
         return self.llm.invoke(prompt.messages)
+    
+    def generate_answer(self, user_input: str, retrieved_information: str = "", template: list = []) -> str:
+        if not template:
+            template = ([
+                ("system", "You are a helpful AI assistant for a phone shop. \
+                Given the user question and the information from the documents, \
+                generate a concise and accurate answer. \n \
+                USER QUESTION: {user_input} \n \
+                INFORMATION FROM DOCUMENTS: {retrieved_information} \n\n \
+                Don't make up an answer."), 
+            ])
+        content = extract_llm_response_content(template, {"user_input": user_input, "retrieved_information": retrieved_information}, self.llm)
+        return str(content)
 
     def generate_search_query(self, user_input: str, retrieved_information: str = "", template: list = []) -> str:
         if not template:
@@ -60,50 +91,30 @@ class AiChatService:
                 INFORMATION FROM DOCUMENTS: {retrieved_information} \n\n \
                 Produce a short (3-8 words) search query"), 
             ])
-            
-        prompt = ChatPromptTemplate.from_messages(template)
-        prompt = prompt.invoke({
-                "user_input": user_input,
-                "retrieved_information": retrieved_information  
-            })
-    
-        response = self.llm.invoke(prompt.messages)
-        return response.content
+        content = extract_llm_response_content(template, {"user_input": user_input, "retrieved_information": retrieved_information}, self.llm)
+        return str(content)
 
-    def query_or_respond(self, user_input: str, template: list = None) -> str:
+    def retrieve_or_respond(self, user_input: str, template: Optional[list[tuple[str, str]]] = None) -> Dict[str, Any]:
         if not template:
             template = ([
             ("system", "You are a helpful AI assistant for a phone shop. Given the user question, "
-                 "decide if you can answer it directly or if you need to search for more information. "
-                 "If you can answer it directly, return a JSON object: "
-                 '{"decision":"answer","answer":"<your answer>"} '
-                 "If you need to search for more information in vectorstore, return a JSON object: "
-                 '{"decision":"retrieve","query":"<search query>"} '
+                 "decide if you need clarification from the user or if you need to search for more information. "
+                 "If the user question is unrelated to phones: "
+                 '{{"decision":"clarify","answer":" "}} '
+                 "If the user question is related to phones: "
+                 '{{"decision":"retrieve","query":" "}} '
                  "Return only valid JSON in the response body."),
+            ("user", "User question: {user_input}")
             ])
-            
-        prompt = ChatPromptTemplate.from_messages(template)
-        prompt = prompt.invoke({
-                "user_input": user_input
-            })
-    
-        response = self.llm.invoke(prompt.messages)
-        text = getattr(response, "content", str(response)).strip()
+        content = extract_llm_response_content(template, {"user_input": user_input}, self.llm)
 
         # try parse as JSON first
         try:
-            obj = json.loads(text)
-            if isinstance(obj, dict) and "action" in obj:
+            obj = json.loads(content)
+            if isinstance(obj, dict) and ("decision" in obj or "action" in obj):
                 return obj
         except Exception:
             pass
 
-        # fallback: simple prefix parsing
-        t = text
-        if t.upper().startswith("ANSWER:"):
-            return {"decision": "answer", "answer": t[len("ANSWER:"):].strip()}
-        if t.upper().startswith("SEARCH:"):
-            return {"decision": "retrieve", "query": t[len("SEARCH:"):].strip()}
-
         # fallback default
-        return {"decision": "answer", "answer": t}
+        return {"decision": "clarify", "answer": " "}

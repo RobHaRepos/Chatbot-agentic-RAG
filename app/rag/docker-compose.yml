@@ -1,4 +1,3 @@
-version: '3.8'
 services: 
   retriever:
     build: .
@@ -10,10 +9,11 @@ services:
       MODEL_NAME_EMBEDDING: "sentence-transformers/all-MiniLM-L6-v2"
       NUMBER_OF_DOCUMENTS_TO_RETRIEVE: 5
     volumes:
-      - ../faiss_Hugging_index:/data/faiss_index:ro
+      # compose file is in app/rag, so go up two levels to repo root where faiss_Hugging_index lives
+      - ../../faiss_Hugging_index:/data/faiss_index:ro
       - hf_cache:/root/.cache/huggingface
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8001/ready || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8001/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 6

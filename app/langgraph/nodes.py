@@ -18,9 +18,9 @@ def node_retrieve_string(query: str, k: int | None, retriever_url: str = RETRIEV
     body = r.json()
     return body.get("documents", "")
 
-def node_query_or_respond(question: str) -> Dict[str, Any]:
+def node_retrieve_or_respond(question: str) -> Dict[str, Any]:
     payload = {"question": question}
-    r = httpx.post(f"{LLM_API_URL}/query_or_respond", json=payload, timeout=30.0)
+    r = httpx.post(f"{LLM_API_URL}/retrieve_or_respond", json=payload, timeout=30.0)
     r.raise_for_status()
     body = r.json()
     if not isinstance(body, dict) or "decision" not in body:

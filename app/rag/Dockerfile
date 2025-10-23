@@ -12,4 +12,4 @@ RUN pip install --upgrade pip setuptools wheel \
 COPY . /app/rag/
 ENV PORT=8001
 EXPOSE 8001
-CMD ["uvicorn", "app.rag.retriever:app", "--host", "0.0.0.0", "--port", "8001", "--workers", "1"]
+CMD ["uvicorn", "retriever:app", "--host", "0.0.0.0", "--port", "8001", "--workers", "1"]

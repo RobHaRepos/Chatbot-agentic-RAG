@@ -1,3 +1,4 @@
+import os
 from langchain_openai import ChatOpenAI
 from fastapi import FastAPI 
 from pydantic import BaseModel
@@ -25,7 +26,21 @@ def generate_search_query(req: GenQueryRequest):
     query = llm_service.generate_search_query(user_input=req.question, retrieved_information=req.context if req.context else "")
     return {"query": query}
 
-@app.post("/query_or_respond")
-def query_or_respond(req: GenQueryRequest):
-    response = llm_service.query_or_respond(user_input=req.question)
+@app.post("/retrieve_or_respond")
+def retrieve_or_respond(req: GenQueryRequest):
+    response = llm_service.retrieve_or_respond(user_input=req.question)
     return response
+
+@app.post("/generate_answer")
+def generate_answer(req: GenQueryRequest):
+    answer = llm_service.generate_answer(question=req.question, retrieved_information=req.context if req.context else "")
+    return {"answer": answer}
+
+@app.get("/ready")
+def readiness_check():
+    ready = llm_service.llm is not None
+    return {"status": ready}
+
+@app.post("/health")
+def health_check():
+    return {"status": "ok"}
