@@ -9,7 +9,6 @@ services:
       MODEL_NAME_EMBEDDING: "sentence-transformers/all-MiniLM-L6-v2"
       NUMBER_OF_DOCUMENTS_TO_RETRIEVE: 5
     volumes:
-      # compose file is in app/rag, so go up two levels to repo root where faiss_Hugging_index lives
       - ../../faiss_Hugging_index:/data/faiss_index:ro
       - hf_cache:/root/.cache/huggingface
     healthcheck:

@@ -1,9 +1,12 @@
+import os
 import json
 from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
-from app.config import MODEL_NAME_LLM, TEMPERATURE_LLM, MAX_TOKENS
-from app.langgraph.tools import get_tools
 from typing import Any, Optional, Dict
+
+MODEL_NAME_LLM = os.environ.get("MODEL_NAME_LLM", "gpt-4.1-mini")
+TEMPERATURE_LLM = float(os.environ.get("TEMPERATURE_LLM", 0.0))
+MAX_TOKENS = int(os.environ.get("MAX_TOKENS", 400))
 
 def extract_llm_response_content(template: Any, variables: Dict[str, Any], llm: Any) -> str:
     prompt = ChatPromptTemplate.from_messages(template)
@@ -28,10 +31,10 @@ def build_llm(Model=ChatOpenAI, model_name=MODEL_NAME_LLM, temperature=TEMPERATU
         temperature=temperature,
         max_completion_tokens=max_tokens
     )
-    tools = get_tools() 
-    llm_with_tools = llm.bind_tools(tools)
+    #tools = get_tools() 
+    #llm_with_tools = llm.bind_tools(tools)
     #llm_with_tools = llm
-    return llm_with_tools
+    return llm
 class AiChatService:
     def __init__(self, Model, model_name: str, api_key: str | None, max_tokens:int, temperature: float):
         self.model_name = model_name
@@ -41,29 +44,29 @@ class AiChatService:
         self.temperature = temperature
         self.llm = build_llm(self.model_class, self.model_name, self.temperature, self.max_tokens)
 
-    def build_prompt(self, question: str, context: str = "", template = None):
-        if template is None:
-            template = ([
-            ("system", "You are a helpful AI assistant for a phone shop. Use the following pieces of context to answer the user question. \
-            If you dont know the anwer, just say that you don`t know and don`t try to make up an answer. \n \
-            CONTEXT: {context}"),
-            ("user", "{question}")
-            ])
-            
-            prompt = ChatPromptTemplate.from_messages(template)
-            prompt = prompt.invoke({
-                    "question": question,
-                    "context": context  
-                })
-        else:
-            prompt = ChatPromptTemplate.from_messages(template)
-            prompt = prompt.invoke({
-                    "question": question,
-                    "context": context  
-                })
-
-        print(prompt)
-        return prompt
+#    def build_prompt(self, question: str, context: str = "", template = None):
+#        if template is None:
+#            template = ([
+#            ("system", "You are a helpful AI assistant for a phone shop. Use the following pieces of context to answer the user question. \
+#            If you dont know the anwer, just say that you don`t know and don`t try to make up an answer. \n \
+#            CONTEXT: {context}"),
+#            ("user", "{question}")
+#            ])
+#            
+#            prompt = ChatPromptTemplate.from_messages(template)
+#            prompt = prompt.invoke({
+#                    "question": question,
+#                    "context": context  
+#                })
+#        else:
+#            prompt = ChatPromptTemplate.from_messages(template)
+#            prompt = prompt.invoke({
+#                    "question": question,
+#                    "context": context  
+#                })
+#
+#        print(prompt)
+#        return prompt
 
     def generate(self, prompt: Any) -> Any:
         return self.llm.invoke(prompt.messages)

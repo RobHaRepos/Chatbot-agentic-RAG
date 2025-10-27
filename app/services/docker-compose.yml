@@ -1,0 +1,20 @@
+services:
+  llm:
+    build: .
+    image: my_llm:latest
+    ports:
+      - "8002:8002"
+    environment:
+      MODEL_NAME_LLM: "${MODEL_NAME_LLM:-gpt-4.1-mini}"
+      OPENAI_API_KEY: "${OPENAI_API_KEY}"
+      MAX_TOKENS: "${MAX_TOKENS:-400}"
+      TEMPERATURE_LLM: "${TEMPERATURE_LLM:-0.0}"
+    volumes:
+      - hf_cache:/root/.cache/huggingface
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8002/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+volumes:
+  hf_cache:

@@ -45,6 +45,14 @@ def test_retrieve_documents_as_list():
     assert isinstance(doc_list, list)
 
 @pytest.mark.skipif(not _service_up(), reason="Retriever service is not running")
+def test_health_endpoint():
+    resp = requests.get(f"{BASE_URL}/health", timeout=5)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "status" in data
+    assert data["status"] == "ok"
+
+@pytest.mark.skipif(not _service_up(), reason="Retriever service is not running")
 def test_retrieve_documents_string_api():
     resp = requests.post(f"{BASE_URL}/retrieve_documents_string", json=PAYLOAD, timeout=10)
     assert resp.status_code == 200

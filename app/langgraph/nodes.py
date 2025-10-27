@@ -25,12 +25,12 @@ def node_retrieve_or_respond(question: str) -> Dict[str, Any]:
     body = r.json()
     if not isinstance(body, dict) or "decision" not in body:
         txt = body if isinstance(body, str) else str(body)
-        return {"decision": "answer", "answer": txt}
+        return {"decision": "clarify", "answer": txt}
     return body
 
 def node_generate_answer(question: str, retrieve: List[Dict], llm_api_url: str = LLM_API_URL) -> str:
     context = "\n\n".join(d.get("text") or d.get("page_content") for d in [retrieve or []])
-    r = httpx.post(f"{llm_api_url}/generate", json={"prompt": f"CONTEXT: \n{context}\n\nQUESTION: {question}"}, timeout=30.0)
+    r = httpx.post(f"{llm_api_url}/generate_answer", json={"prompt": f"CONTEXT: \n{context}\n\nQUESTION: {question}"}, timeout=30.0)
     r.raise_for_status()
     return r.json().get("text", "")
 
@@ -42,5 +42,5 @@ def node_rewrite_question(question: str, retrieve: List[Dict], llm_api_url: str 
 
 def node_ask_clarify(question: str) -> Dict[str, str]:
     """Return a short clarification prompt to the user."""
-    return {"decision": "clarify", "message": "Could you be more specific? Which phone model or what detail do you mean (brand/model/specs/price)?"}
+    return {"action": "clarify", "message": "Could you be more specific? Which phone model or what detail do you mean (brand/model/specs/price)?"}
     
