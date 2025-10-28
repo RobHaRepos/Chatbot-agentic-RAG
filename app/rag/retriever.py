@@ -7,10 +7,11 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from langchain_community.vectorstores import FAISS
 
-import os 
+import os
+from pathlib import Path
 
 # environment-driven configurations
-PATH_TO_FAISS_INDEX = os.environ.get("PATH_TO_FAISS_INDEX", "")
+PATH_TO_FAISS_INDEX = os.environ.get("PATH_TO_FAISS_INDEX", str(Path(__file__).resolve().parent.parent.parent / "faiss_Hugging_index"))
 MODEL_NAME_EMBEDDING = os.environ.get("MODEL_NAME_EMBEDDING", "")
 NUMBER_OF_DOCUMENTS_TO_RETRIEVE = int(os.environ.get("NUMBER_OF_DOCUMENTS_TO_RETRIEVE", 5))
 

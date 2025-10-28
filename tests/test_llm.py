@@ -2,7 +2,7 @@ import requests
 import pytest
 from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
-from app.services.llm import AiChatService
+from app.llm.llm import AiChatService
 from app.config import MAX_TOKENS, TEMPERATURE_LLM, MODEL_NAME_LLM, API_KEY_LLM
 
 BASE_URL = "http://localhost:8002"
@@ -22,7 +22,7 @@ def generate_decisions(user_input:str, monkeypatch):
             max_completion_tokens=max_tokens
         )
 
-    monkeypatch.setattr("app.services.llm.build_llm", _fake_build_llm)
+    monkeypatch.setattr("app.llm.llm.build_llm", _fake_build_llm)
 
     service = AiChatService(
         Model=ChatOpenAI, 
@@ -87,7 +87,7 @@ def test_generate_simple_response(monkeypatch):
             max_completion_tokens=max_tokens
         )
     
-    monkeypatch.setattr("app.services.llm.build_llm", _fake_build_llm)
+    monkeypatch.setattr("app.llm.llm.build_llm", _fake_build_llm)
     
     service = AiChatService(
         Model=ChatOpenAI, 

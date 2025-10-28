@@ -1,13 +1,11 @@
 import sys
 from pathlib import Path
+from IPython.display import Image, display
+from workflow import build_workflow
+import base64
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
-
-from IPython.display import Image, display
-from app.langgraph.workflow import build_workflow
-import base64
-
 
 def visualize_graph():
     graph = build_workflow()

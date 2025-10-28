@@ -1,16 +1,24 @@
-from langgraph.graph import StateGraph, START, END, MessagesState
-#from langgraph.prebuilt import ToolNode
+from typing import Optional, TypedDict
+from langgraph.graph import StateGraph, START, END
 from app.langgraph.nodes import (
-    node_retrieve_list,
+    #node_retrieve_list,
     node_retrieve_string,
     node_generate_answer,
-    node_rewrite_question,
+    #node_rewrite_question,
     node_retrieve_or_respond,
     node_ask_clarify
 )
-#from app.langgraph.tools import get_tools
 
-def decision_router(state: MessagesState):
+class OverallState(TypedDict):
+    question: str
+    decision: Optional[str]
+    k: Optional[int]
+    action: Optional[str]
+    context: Optional[str]
+    answer: Optional[str]
+    clarification: Optional[str]
+
+def decision_router(state: OverallState):
     decision = getattr(state, "decision", None)
    
     if decision == "clarify":
@@ -23,12 +31,11 @@ def decision_router(state: MessagesState):
     return END
 
 def build_workflow():
-    #tools = get_tools()
-    wf = StateGraph(MessagesState)
+    wf = StateGraph(OverallState)
 
     wf.add_node("generate_retrieve_or_respond", node_retrieve_or_respond)
-    #wf.add_node("retrieve", ToolNode(tools=tools))
-    wf.add_node("rewrite_question", node_rewrite_question)
+    wf.add_node("retrieve", node_retrieve_string)
+    #wf.add_node("rewrite_question", node_rewrite_question)
     wf.add_node("answer", node_generate_answer)
     wf.add_node("clarify", node_ask_clarify)
 
