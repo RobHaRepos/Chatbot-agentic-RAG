@@ -1,3 +1,4 @@
+from types import SimpleNamespace
 import requests
 import pytest
 
@@ -21,6 +22,29 @@ def _service_up() -> bool:
     except requests.RequestException:
         return False
 
+class TestServiceUp_retriever:
+    def test_service_up_happy(self, monkeypatch):
+        def _fake_get(url, timeout):
+            return SimpleNamespace(status_code=200)
+
+        monkeypatch.setattr(requests, "get", _fake_get)
+        assert _service_up() is True
+
+    def test_service_up_sad(self, monkeypatch):
+        def _fake_get(url, timeout):
+            raise requests.RequestException("Service down")
+
+        monkeypatch.setattr(requests, "get", _fake_get)
+        assert _service_up() is False
+
+    def test_service_up_unexpected_timeout(self, monkeypatch):
+        def _fake_get(url, timeout):
+            raise requests.Timeout("Timeout occurred")
+
+        monkeypatch.setattr(requests, "get", _fake_get)
+        assert _service_up() is False
+
+    
 def test_retrieve_documents_as_string():
     embeddings = HuggingFaceEmbeddings(model_name=MODEL_NAME_EMBEDDING)
     retriever_module.vector_store = load_faiss_index(PATH_TO_FAISS_INDEX, embeddings)

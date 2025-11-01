@@ -2,3 +2,4 @@ faiss_Hugging_index/
 .env
 .env.*
 app/services/.env
+coverage.xml

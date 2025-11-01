@@ -2,7 +2,7 @@ import os
 from langchain_openai import ChatOpenAI
 from fastapi import FastAPI 
 from pydantic import BaseModel
-from llm import AiChatService
+from .llm import AiChatService
 from contextlib import asynccontextmanager
 
 MODEL_NAME_LLM = os.environ.get("MODEL_NAME_LLM", "gpt-4.1-mini")
@@ -33,10 +33,10 @@ class GenQueryRequest(BaseModel):
 #    prompt = llm_service.build_prompt(question=req.prompt)
 #    return {"text": llm_service.generate(prompt)}
 
-@app.post("/generate_search_query")
-def generate_search_query(req: GenQueryRequest):
-    query = llm_service.generate_search_query(user_input=req.question, retrieved_information=req.context if req.context else "")
-    return {"query": query}
+# @app.post("/generate_search_query")
+# def generate_search_query(req: GenQueryRequest):
+#     query = llm_service.generate_search_query(user_input=req.question, retrieved_information=req.context if req.context else "")
+#     return {"query": query}
 
 @app.post("/retrieve_or_respond")
 def retrieve_or_respond(req: GenQueryRequest):
