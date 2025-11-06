@@ -1,7 +1,9 @@
 import os
 import httpx
-from typing import Dict, Any
-from workflow import OverallState
+from typing import Dict, Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .workflow import OverallState
 
 LLM_API_URL = os.environ.get("LANGGRAPH_LLM_API_URL", "http://localhost:8000")
 RETRIEVER_API_URL = os.environ.get("LANGGRAPH_RETRIEVER_API_URL", "http://localhost:8001")
@@ -13,7 +15,7 @@ RETRIEVER_API_URL = os.environ.get("LANGGRAPH_RETRIEVER_API_URL", "http://localh
 #    body = r.json()
 #    return body.get("documents", [])
 
-async def node_retrieve_string(state: OverallState) -> Dict[str, Any]:
+async def node_retrieve_string(state: "OverallState") -> Dict[str, Any]:
     payload = {"query": state["question"], "k": state["k"]}
     async with httpx.AsyncClient(timeout=30.0) as client:
         r = await client.post(f"{RETRIEVER_API_URL}/retrieve_documents_string", json=payload)
@@ -21,7 +23,7 @@ async def node_retrieve_string(state: OverallState) -> Dict[str, Any]:
         body = r.json()
         return {"action": "retrieve", "documents": body}
 
-async def node_retrieve_or_respond(state: OverallState) -> Dict[str, Any]:
+async def node_retrieve_or_respond(state: "OverallState") -> Dict[str, Any]:
     payload = {"question": state["question"]}
     async with httpx.AsyncClient(timeout=30.0) as client:
         r = await client.post(f"{LLM_API_URL}/retrieve_or_respond", json=payload)
@@ -32,9 +34,10 @@ async def node_retrieve_or_respond(state: OverallState) -> Dict[str, Any]:
             return {"decision": "clarify", "answer": txt}
     return body
 
-async def node_generate_answer(state: OverallState) -> Dict[str, str]:
+async def node_generate_answer(state: "OverallState") -> Dict[str, str]:
     async with httpx.AsyncClient(timeout=30.0) as client:
-        r = await client.post(f"{LLM_API_URL}/generate_answer", json={"prompt": f"CONTEXT: \n{state['context']}\n\nQUESTION: {state['question']}"})
+        payload = {"question": state["question"], "context": state.get("context", "")}
+        r = await client.post(f"{LLM_API_URL}/generate_answer", json=payload)
         r.raise_for_status()
         return {"action": "answer", "answer": r.json().get("answer", "")}
 
@@ -43,7 +46,7 @@ async def node_generate_answer(state: OverallState) -> Dict[str, str]:
 #    r.raise_for_status()
 #    return r.json().get("query", "")
 
-async def node_ask_clarify(state: OverallState) -> Dict[str, str]:
+def node_ask_clarify(state: "OverallState") -> Dict[str, str]:
     """Return a short clarification prompt to the user."""
     return {"action": "clarify", "message": "Could you be more specific? Which phone model or what detail do you mean (brand/model/specs/price)?"}
     

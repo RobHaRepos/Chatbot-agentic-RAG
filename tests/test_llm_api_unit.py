@@ -1,5 +1,3 @@
-from types import SimpleNamespace
-from typing import Any, cast
 from app.llm import llm_api as llm_api_module
 
 def test_health_check_function():

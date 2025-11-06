@@ -1,6 +1,6 @@
 from typing import Optional, TypedDict
 from langgraph.graph import StateGraph, START, END
-from app.langgraph.nodes import (
+from .nodes import (
     #node_retrieve_list,
     node_retrieve_string,
     node_generate_answer,

@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 from IPython.display import Image, display
-from workflow import build_workflow
+from .workflow import build_workflow
 import base64
 
 REPO_ROOT = Path(__file__).resolve().parents[2]

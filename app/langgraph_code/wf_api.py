@@ -1,4 +1,4 @@
-from workflow import build_workflow
+from .workflow import build_workflow
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from pydantic import BaseModel
