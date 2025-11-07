@@ -1,0 +1,69 @@
+import pytest
+from app.langgraph_code import wf_api
+
+@pytest.mark.anyio
+async def test_lifespan_context_manager(monkeypatch):
+    class FakeGraph:
+        def invoke(self, payload):
+            pass
+        
+    monkeypatch.setattr("app.langgraph_code.wf_api.build_workflow", lambda: FakeGraph())
+    async with wf_api.lifespan(wf_api.app):
+        assert wf_api.app.state.graph is not None
+        assert isinstance(wf_api.app.state.graph, FakeGraph)
+    
+    assert getattr(wf_api.app.state, "graph", None) is None
+
+def test_get_health_happy():
+    response = wf_api.health_check()
+    assert isinstance(response, dict)
+    assert response == {"status": "ok"}
+
+def test_get_ready_happy(monkeypatch):
+    monkeypatch.setattr("app.langgraph_code.wf_api.app.state.graph", object(), raising=False)
+    response = wf_api.ready_check()
+    assert isinstance(response, dict)
+    assert "status" in response
+    assert isinstance(response["status"], bool)
+    assert response["status"] is True 
+    
+def test_get_ready_sad(monkeypatch):
+    monkeypatch.setattr("app.langgraph_code.wf_api.app.state.graph", None, raising=False)
+    response = wf_api.ready_check()
+    assert isinstance(response, dict)
+    assert "status" in response
+    assert isinstance(response["status"], bool)
+    assert response["status"] is False 
+
+@pytest.mark.anyio
+async def test_run_workflow_happy(monkeypatch):
+    class FakeGraph:
+        def invoke(self, payload):
+            return {"result": "This is the answer!"}
+    
+    fake_graph = FakeGraph()
+    monkeypatch.setattr("app.langgraph_code.wf_api.app.state.graph", fake_graph, raising=False)
+    request = wf_api.RunRequest(question="What is the newest Iphone?", k=3)
+    result = await wf_api.run_workflow(request)
+    assert isinstance(result, dict)
+    assert "result" in result
+    assert result["result"] == {"result": "This is the answer!"}
+
+@pytest.mark.anyio
+async def test_run_workflow_no_graph(monkeypatch):
+    monkeypatch.setattr("app.langgraph_code.wf_api.app.state.graph", None, raising=False)
+    request = wf_api.RunRequest(question="Will this fail?", k=3)
+    
+    with pytest.raises(AttributeError):
+        await wf_api.run_workflow(request)
+
+@pytest.mark.anyio
+async def test_run_workflow_invoke_exception(monkeypatch):
+    class BrokenGraph:
+        def invoke(self, payload):
+            raise RuntimeError("Graph invocation failed")
+    monkeypatch.setattr("app.langgraph_code.wf_api.app.state.graph", BrokenGraph(), raising=False)
+    request = wf_api.RunRequest(question="Will invoke error?", k=3)
+    
+    with pytest.raises(RuntimeError):
+        await wf_api.run_workflow(request)
