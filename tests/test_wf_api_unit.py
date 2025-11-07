@@ -4,7 +4,7 @@ from app.langgraph_code import wf_api
 @pytest.mark.anyio
 async def test_lifespan_context_manager(monkeypatch):
     class FakeGraph:
-        def invoke(self, payload):
+        def ainvoke(self, payload):
             pass
         
     monkeypatch.setattr("app.langgraph_code.wf_api.build_workflow", lambda: FakeGraph())
@@ -38,7 +38,7 @@ def test_get_ready_sad(monkeypatch):
 @pytest.mark.anyio
 async def test_run_workflow_happy(monkeypatch):
     class FakeGraph:
-        def invoke(self, payload):
+        async def ainvoke(self, payload):
             return {"result": "This is the answer!"}
     
     fake_graph = FakeGraph()
@@ -60,7 +60,7 @@ async def test_run_workflow_no_graph(monkeypatch):
 @pytest.mark.anyio
 async def test_run_workflow_invoke_exception(monkeypatch):
     class BrokenGraph:
-        def invoke(self, payload):
+        def ainvoke(self, payload):
             raise RuntimeError("Graph invocation failed")
     monkeypatch.setattr("app.langgraph_code.wf_api.app.state.graph", BrokenGraph(), raising=False)
     request = wf_api.RunRequest(question="Will invoke error?", k=3)

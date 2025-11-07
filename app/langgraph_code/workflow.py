@@ -17,10 +17,12 @@ class OverallState(TypedDict):
     context: Optional[str]
     answer: Optional[str]
     clarification: Optional[str]
+    documents: Optional[list[str]]
 
 def decision_router(state: OverallState):
-    decision = getattr(state, "decision", None)
-   
+    # State is a dict-like mapping at runtime; use .get to read the decision reliably
+    decision = state.get("decision") if isinstance(state, dict) else getattr(state, "decision", None)
+
     if decision == "clarify":
         return "clarify"
     elif decision == "answer":
@@ -33,6 +35,7 @@ def decision_router(state: OverallState):
 def build_workflow():
     wf = StateGraph(OverallState)
 
+    # node name must match edges below — use 'generate_retrieve_or_respond'
     wf.add_node("generate_retrieve_or_respond", node_retrieve_or_respond)
     wf.add_node("retrieve", node_retrieve_string)
     #wf.add_node("rewrite_question", node_rewrite_question)

@@ -36,7 +36,8 @@ jobs:
       - name: Run Ruff-linter
         run: |
           pip install ruff
-          ruff .
+          # newer ruff versions use subcommands; call `ruff check` explicitly
+          ruff check .
 
       - name: Run tests with pytest
         env:

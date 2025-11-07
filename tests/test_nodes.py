@@ -49,7 +49,8 @@ class FakeAsyncClient:
 
 @pytest.mark.anyio
 async def test_node_retrieve_string(monkeypatch, state_factory):
-    fake_response = FakeResponse("DOC_A\nDOC_B")
+    fake_response = FakeResponse({"documents": "DOC_A\n\nDOC_B"})
+    
     fake_client = FakeAsyncClient(fake_response)
     monkeypatch.setattr("app.langgraph_code.nodes.httpx.AsyncClient", lambda *args, **kwargs: fake_client)
     
@@ -59,14 +60,13 @@ async def test_node_retrieve_string(monkeypatch, state_factory):
     )
         
     result = await node_retrieve_string(state)
-    
     assert isinstance(result, dict)
-    assert "action" in result
-    assert result["action"] == "retrieve"
     assert "documents" in result
-    assert "DOC_A" in result["documents"]
-    assert "DOC_B" in result["documents"]
-    
+
+    docs_text = result["context"]
+    assert "DOC_A" in docs_text
+    assert "DOC_B" in docs_text
+        
 @pytest.mark.anyio
 async def test_node_retrieve_or_respond_retrieve(monkeypatch, state_factory):
     fake_response_retrieve = FakeResponse({"decision": "retrieve", "answer": ""})

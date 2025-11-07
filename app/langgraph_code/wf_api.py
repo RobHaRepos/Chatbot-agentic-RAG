@@ -32,6 +32,6 @@ class RunRequest(BaseModel):
 @app.post("/run")
 async def run_workflow(request: RunRequest):
     graph = app.state.graph
-    payload = {"question": request.question}
-    result = graph.invoke(payload)
+    payload = {"question": request.question, "k": request.k}
+    result = await graph.ainvoke(payload)
     return {"result": result}
