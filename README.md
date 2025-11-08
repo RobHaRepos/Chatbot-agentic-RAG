@@ -47,6 +47,12 @@ A small LangGraph-based RAG (Retrieval-Augmented Generation) demo that composes 
    - Retriever service at `LANGGRAPH_RETRIEVER_API_URL` (default `http://localhost:8001`) — exposes `/retrieve_documents_string` and `/retrieve_documents_list` backed by FAISS.
 3. `app/langgraph_code/wf_api.py` exposes a FastAPI `/run` endpoint which loads the compiled graph at startup and invokes it with the posted question. The handler awaits `graph.ainvoke(payload)` so async nodes can run concurrently.
 
+## Visualization
+
+The LangGraph workflow visualization is rendered to `out/stategraph.png` and shows the compiled state graph used by the workflow.
+
+![LangGraph state graph](out/stategraph.png)
+
 ## Running locally (developer-friendly)
 
 Prerequisites: Python 3.13, pip, optionally Docker for containerized services.
