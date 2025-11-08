@@ -117,11 +117,6 @@ This repository includes a GitHub Actions workflow at `.github/workflows/ci-buil
 
 The tests badge at the top links to that workflow run.
 
-ToDo CI improvements:
-- Cache venv/poetry/pip better for speed
-- Run `pytest -k "not integration"` or use pytest markers to avoid integration tests that require external services
-- Add a workflow job that builds Docker images and pushes to a registry for CD
-
 ## Security scanning (Snyk / SonarQube)
 
 This repo leverages external scanning-as-a-service for testing and reporting during development:
