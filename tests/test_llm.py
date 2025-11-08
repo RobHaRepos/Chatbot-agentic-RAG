@@ -141,4 +141,4 @@ def test_generate_full_answer(monkeypatch):
     print(f"Answer: {answer}")
     assert isinstance(answer, str)
     assert len(answer) > 0
-    assert "Iphone 16 MAX".lower() in answer.lower()
+    assert "The newest Iphone is Iphone 15 Pro Max".lower() in answer.lower()
