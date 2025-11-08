@@ -2,10 +2,6 @@ from types import SimpleNamespace
 import requests
 import pytest
 
-from app.rag.retriever import load_faiss_index
-from app.config import PATH_TO_FAISS_INDEX, MODEL_NAME_EMBEDDING
-from langchain_huggingface import HuggingFaceEmbeddings
-
 import app.rag.retriever as retriever_module
 from app.rag.retriever import SearchRequest
 
@@ -16,19 +12,27 @@ PAYLOAD = {
 }
 
 @pytest.fixture
-def fake_faiss(monkeypatch):
+def fake_vector_store(monkeypatch):
+    """Provide a fake FAISS-like vector store for unit tests."""
     class FakeRetriever:
         def invoke(self, query):
-            return [SimpleNamespace(page_content="Doc A"),
-                    SimpleNamespace(page_content="Doc B"),
-                    SimpleNamespace(page_content="Doc C")
-                    ]
-    class FakeVectorStore:
-        def as_retriever(self, *a, **k):
-            return FakeRetriever()
-    monkeypatch.setattr(retriever_module, "load_faiss_index", lambda path, embeddings, allow_dangerous_deserialization=True: FakeVectorStore())
+            return [
+                SimpleNamespace(page_content="Doc A"),
+                SimpleNamespace(page_content="Doc B"),
+            ]
+    fake_store = SimpleNamespace(as_retriever=lambda *a, **k: FakeRetriever())
+
+    monkeypatch.setattr(retriever_module, "vector_store", fake_store, raising=False)
+
+    import langchain_huggingface
+    class CheapEmb:
+        def __init__(self, model_name=None, **kwargs): pass
+    monkeypatch.setattr(langchain_huggingface, "HuggingFaceEmbeddings", CheapEmb)
+
+    return fake_store
 
 def _service_up() -> bool:
+    """Return True when the retriever service health endpoint is reachable and OK."""
     try:
         r = requests.get(f"{BASE_URL}/health", timeout=2)
         return r.status_code == 200
@@ -37,6 +41,7 @@ def _service_up() -> bool:
 
 class TestServiceUp_retriever:
     def test_service_up_happy(self, monkeypatch):
+        """Service up returns True when health endpoint responds 200."""
         def _fake_get(url, timeout):
             return SimpleNamespace(status_code=200)
 
@@ -44,6 +49,7 @@ class TestServiceUp_retriever:
         assert _service_up() is True
 
     def test_service_up_sad(self, monkeypatch):
+        """Service up returns False when a RequestException is raised."""
         def _fake_get(url, timeout):
             raise requests.RequestException("Service down")
 
@@ -51,6 +57,7 @@ class TestServiceUp_retriever:
         assert _service_up() is False
 
     def test_service_up_unexpected_timeout(self, monkeypatch):
+        """Service up returns False when a timeout occurs contacting the service."""
         def _fake_get(url, timeout):
             raise requests.Timeout("Timeout occurred")
 
@@ -58,9 +65,8 @@ class TestServiceUp_retriever:
         assert _service_up() is False
 
     
-def test_retrieve_documents_as_string(fake_faiss):
-    embeddings = HuggingFaceEmbeddings(model_name=MODEL_NAME_EMBEDDING)
-    retriever_module.vector_store = load_faiss_index(PATH_TO_FAISS_INDEX, embeddings)
+def test_retrieve_documents_as_string(fake_vector_store):
+    """Assert retrieve_documents_as_string returns a non-empty concatenated string."""
     req = SearchRequest(query="What are the best Iphones?", k=5)
 
     docs = retriever_module.retrieve_documents_as_string(req)
@@ -69,10 +75,11 @@ def test_retrieve_documents_as_string(fake_faiss):
     print(doc_string)
     assert doc_string is not None and len(doc_string) > 0
     assert isinstance(doc_string, str)
+    assert "Doc A" in doc_string
+    assert "Doc B" in doc_string
 
-def test_retrieve_documents_as_list(fake_faiss):
-    embeddings = HuggingFaceEmbeddings(model_name=MODEL_NAME_EMBEDDING)
-    retriever_module.vector_store = load_faiss_index(PATH_TO_FAISS_INDEX, embeddings)
+def test_retrieve_documents_as_list(fake_vector_store):
+    """Assert retrieve_documents_as_list returns a non-empty list of documents."""
     req = SearchRequest(query="What are the best Iphones?", k=5)
     docs = retriever_module.retrieve_documents_as_list(req)
     doc_list = docs.documents
@@ -80,9 +87,12 @@ def test_retrieve_documents_as_list(fake_faiss):
     print(doc_list)
     assert doc_list is not None and len(doc_list) > 0
     assert isinstance(doc_list, list)
+    assert any("Doc A" == doc.page_content for doc in doc_list)
+    assert any("Doc B" == doc.page_content for doc in doc_list)
 
 @pytest.mark.skipif(not _service_up(), reason="Retriever service is not running")
 def test_health_endpoint():
+    """Integration test: check retriever /health endpoint returns expected OK status."""
     resp = requests.get(f"{BASE_URL}/health", timeout=5)
     assert resp.status_code == 200
     data = resp.json()
@@ -91,6 +101,7 @@ def test_health_endpoint():
 
 @pytest.mark.skipif(not _service_up(), reason="Retriever service is not running")
 def test_retrieve_documents_string_api():
+    """Integration test: POST to retrieve_documents_string and assert non-empty string."""
     resp = requests.post(f"{BASE_URL}/retrieve_documents_string", json=PAYLOAD, timeout=10)
     assert resp.status_code == 200
     data = resp.json()
