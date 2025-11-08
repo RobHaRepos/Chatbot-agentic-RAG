@@ -1,4 +1,6 @@
+.gitkeep
 faiss_Hugging_index/
+!faiss_Hugging_index/.gitkeep
 .env
 .env.*
 app/services/.env
