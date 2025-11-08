@@ -15,6 +15,19 @@ PAYLOAD = {
     "k": 10
 }
 
+@pytest.fixture
+def fake_faiss(monkeypatch):
+    class FakeRetriever:
+        def invoke(self, query):
+            return [SimpleNamespace(page_content="Doc A"),
+                    SimpleNamespace(page_content="Doc B"),
+                    SimpleNamespace(page_content="Doc C")
+                    ]
+    class FakeVectorStore:
+        def as_retriever(self, *a, **k):
+            return FakeRetriever()
+    monkeypatch.setattr(retriever_module, "load_faiss_index", lambda path, embeddings, allow_dangerous_deserialization=True: FakeVectorStore())
+
 def _service_up() -> bool:
     try:
         r = requests.get(f"{BASE_URL}/health", timeout=2)
@@ -45,7 +58,7 @@ class TestServiceUp_retriever:
         assert _service_up() is False
 
     
-def test_retrieve_documents_as_string():
+def test_retrieve_documents_as_string(fake_faiss):
     embeddings = HuggingFaceEmbeddings(model_name=MODEL_NAME_EMBEDDING)
     retriever_module.vector_store = load_faiss_index(PATH_TO_FAISS_INDEX, embeddings)
     req = SearchRequest(query="What are the best Iphones?", k=5)
@@ -57,7 +70,7 @@ def test_retrieve_documents_as_string():
     assert doc_string is not None and len(doc_string) > 0
     assert isinstance(doc_string, str)
 
-def test_retrieve_documents_as_list():
+def test_retrieve_documents_as_list(fake_faiss):
     embeddings = HuggingFaceEmbeddings(model_name=MODEL_NAME_EMBEDDING)
     retriever_module.vector_store = load_faiss_index(PATH_TO_FAISS_INDEX, embeddings)
     req = SearchRequest(query="What are the best Iphones?", k=5)
