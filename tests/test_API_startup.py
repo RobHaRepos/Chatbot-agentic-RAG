@@ -9,7 +9,7 @@ class DummyVectorStore:
     def __init__(self):
         self._meta = {"fake": True}
         self.index = SimpleNamespace(ntotal=10)
-
+### ToDo create seperate test for load faiss index --> unit test and integration test with real index
 def test_load_faiss_index(monkeypatch):
     index_path = Path(PATH_TO_FAISS_INDEX) / "index.faiss"
     if not index_path.exists():

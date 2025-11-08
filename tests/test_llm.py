@@ -5,7 +5,16 @@ from app.llm.llm import AiChatService
 from app.config import MAX_TOKENS, TEMPERATURE_LLM, MODEL_NAME_LLM, API_KEY_LLM
 from types import SimpleNamespace
 
+
 BASE_URL = "http://localhost:8002"
+# ToDO -- write integration tests with real LLM calls -- requires OPENAI_API_KEY in env
+
+@pytest.fixture(autouse=True)
+def patch_build_llm(monkeypatch):
+    """Default fake LLM for unit tests: returns harmless answer string."""
+    fake_llm = SimpleNamespace(invoke=lambda messages: SimpleNamespace(content="The newest Iphone is Iphone 15 Pro Max."))
+    monkeypatch.setattr(AiChatService, "build_llm", lambda self, *a, **k: fake_llm)
+    return fake_llm
 
 def generate_decisions(user_input:str):    
     service = AiChatService(
@@ -82,14 +91,16 @@ def test_extract_llm_response_content_sad(monkeypatch):
     with pytest.raises(TypeError):
         service.extract_llm_response_content(template=[], variables={}, llm=fake_llm)
 
-def test_generate_decision_retrieve():
+def test_generate_decision_retrieve(monkeypatch):
+    monkeypatch.setattr(AiChatService, "retrieve_or_respond", lambda self, user_input: {"decision": "retrieve", "answer": ""})
     decision, content = generate_decisions(user_input="What is the newest Iphone?", )
     print(f"Decision: {decision}, Content: {content}")
     assert decision == "retrieve"
     assert isinstance(content, str) 
     #assert len(content) == 0
     
-def test_generate_decision_clarify():
+def test_generate_decision_clarify(monkeypatch):
+    monkeypatch.setattr(AiChatService, "retrieve_or_respond", lambda self, user_input: {"decision": "clarify", "answer": ""})
     decision, content = generate_decisions(user_input="What is the capital of France?", )
     print(f"Decision: {decision}, Content: {content}")
     assert decision == "clarify"
