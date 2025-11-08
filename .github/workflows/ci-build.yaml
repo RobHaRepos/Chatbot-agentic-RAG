@@ -42,7 +42,6 @@ jobs:
       - name: Run tests with pytest
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        run: |
-          # rely on pytest.ini addopts for coverage flags so local and CI are consistent
+        run: | 
           python -m pytest -q --maxfail=1
       

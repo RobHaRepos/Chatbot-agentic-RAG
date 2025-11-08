@@ -5,23 +5,31 @@ from app.rag.retriever import load_faiss_index
 from pathlib import Path
 
 
+class DummyVectorStore:
+    def __init__(self):
+        self._meta = {"fake": True}
+        self.index = SimpleNamespace(ntotal=10)
+
 def test_load_faiss_index(monkeypatch):
     index_path = Path(PATH_TO_FAISS_INDEX) / "index.faiss"
     if not index_path.exists():
-        class DummyVectorStore:
-            def __init__(self):
-                self._meta = {"fake": True}
         monkeypatch.setattr("app.rag.retriever.FAISS.load_local", 
                             lambda path, embeddings, 
                             allow_dangerous_deserialization=True: DummyVectorStore()
-                            )
+                            )   
     
     embeddings = HuggingFaceEmbeddings(model_name=MODEL_NAME_EMBEDDING)
     vector_store = load_faiss_index(PATH_TO_FAISS_INDEX, embeddings)
     if vector_store is not None:
         assert vector_store is not None
 
-def test_faiss_not_empty():
+def test_faiss_not_empty(monkeypatch):
+    index_path = Path(PATH_TO_FAISS_INDEX) / "index.faiss"
+    if not index_path.exists():
+        monkeypatch.setattr("app.rag.retriever.FAISS.load_local", 
+                            lambda path, embeddings, 
+                            allow_dangerous_deserialization=True: DummyVectorStore()
+                            )    
     embeddings = HuggingFaceEmbeddings(model_name=MODEL_NAME_EMBEDDING)  
     vector_store = load_faiss_index(PATH_TO_FAISS_INDEX, embeddings)
     assert vector_store.index.ntotal > 0
