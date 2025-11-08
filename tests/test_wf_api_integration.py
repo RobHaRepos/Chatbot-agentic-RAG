@@ -3,7 +3,9 @@ import time
 import pytest
 from fastapi.testclient import TestClient
 from app.langgraph_code.wf_api import app
+from tests.test_retriever import _service_up
 
+@pytest.mark.skipif(not _service_up(url=os.environ.get("RETRIEVER_SERVICE_URL", "http://localhost:8001")), reason="Retriever service is not running")
 @pytest.mark.integration
 def test_wf_api_run_workflow_happy():
     with TestClient(app) as client:

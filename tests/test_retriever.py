@@ -31,10 +31,10 @@ def fake_vector_store(monkeypatch):
 
     return fake_store
 
-def _service_up() -> bool:
+def _service_up(url: str) -> bool:
     """Return True when the retriever service health endpoint is reachable and OK."""
     try:
-        r = requests.get(f"{BASE_URL}/health", timeout=2)
+        r = requests.get(f"{url}/health", timeout=2)
         return r.status_code == 200
     except requests.RequestException:
         return False
@@ -46,7 +46,7 @@ class TestServiceUp_retriever:
             return SimpleNamespace(status_code=200)
 
         monkeypatch.setattr(requests, "get", _fake_get)
-        assert _service_up() is True
+        assert _service_up(url=BASE_URL) is True
 
     def test_service_up_sad(self, monkeypatch):
         """Service up returns False when a RequestException is raised."""
@@ -54,7 +54,7 @@ class TestServiceUp_retriever:
             raise requests.RequestException("Service down")
 
         monkeypatch.setattr(requests, "get", _fake_get)
-        assert _service_up() is False
+        assert _service_up(url=BASE_URL) is False
 
     def test_service_up_unexpected_timeout(self, monkeypatch):
         """Service up returns False when a timeout occurs contacting the service."""
@@ -62,7 +62,7 @@ class TestServiceUp_retriever:
             raise requests.Timeout("Timeout occurred")
 
         monkeypatch.setattr(requests, "get", _fake_get)
-        assert _service_up() is False
+        assert _service_up(url=BASE_URL) is False
 
     
 def test_retrieve_documents_as_string(fake_vector_store):
@@ -90,7 +90,7 @@ def test_retrieve_documents_as_list(fake_vector_store):
     assert any("Doc A" == doc.page_content for doc in doc_list)
     assert any("Doc B" == doc.page_content for doc in doc_list)
 
-@pytest.mark.skipif(not _service_up(), reason="Retriever service is not running")
+@pytest.mark.skipif(not _service_up(url=BASE_URL), reason="Retriever service is not running")
 def test_health_endpoint():
     """Integration test: check retriever /health endpoint returns expected OK status."""
     resp = requests.get(f"{BASE_URL}/health", timeout=5)
@@ -99,7 +99,7 @@ def test_health_endpoint():
     assert "status" in data
     assert data["status"] == "ok"
 
-@pytest.mark.skipif(not _service_up(), reason="Retriever service is not running")
+@pytest.mark.skipif(not _service_up(url=BASE_URL), reason="Retriever service is not running")
 def test_retrieve_documents_string_api():
     """Integration test: POST to retrieve_documents_string and assert non-empty string."""
     resp = requests.post(f"{BASE_URL}/retrieve_documents_string", json=PAYLOAD, timeout=10)
