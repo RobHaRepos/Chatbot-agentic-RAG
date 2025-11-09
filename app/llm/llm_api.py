@@ -2,7 +2,7 @@ import os
 from langchain_openai import ChatOpenAI
 from fastapi import FastAPI 
 from pydantic import BaseModel
-from .llm import AiChatService
+from llm import AiChatService
 from contextlib import asynccontextmanager
 
 MODEL_NAME_LLM = os.environ.get("MODEL_NAME_LLM", "gpt-4.1-mini")

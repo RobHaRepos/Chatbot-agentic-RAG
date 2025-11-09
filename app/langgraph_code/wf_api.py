@@ -1,5 +1,6 @@
-from .workflow import build_workflow
+from workflow import build_workflow
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from pydantic import BaseModel
 from typing import Optional
@@ -14,6 +15,14 @@ async def lifespan(app: FastAPI):
         app.state.graph = None
 
 app = FastAPI(lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:8003", "http://127.0.0.1:8003", "*"], 
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/health")
 def health_check():

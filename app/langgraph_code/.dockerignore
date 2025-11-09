@@ -1,0 +1,11 @@
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.env
+*.sqlite3
+faiss_Hugging_index
+tests
+.vscode
+.git
+out
