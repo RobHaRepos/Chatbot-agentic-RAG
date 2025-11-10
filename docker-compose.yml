@@ -1,8 +1,8 @@
 services:
   retriever:
     build:
-      context: ./app/rag
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: app/rag/Dockerfile
     image: "${RETRIEVER_IMAGE:-chatbot_retriever:latest}"
     env_file:
       - .env
@@ -24,8 +24,8 @@ services:
 
   llm:
     build:
-      context: ./app/llm
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: app/llm/Dockerfile
     image: "${LLM_IMAGE:-chatbot_llm:latest}"
     env_file:
       - .env
@@ -45,8 +45,8 @@ services:
       
   langgraph:
     build:
-      context: ./app/langgraph_code
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: app/langgraph_code/Dockerfile
     image: "${LANGGRAPH_IMAGE:-chatbot_langgraph:latest}"
     env_file: .env
     ports:
