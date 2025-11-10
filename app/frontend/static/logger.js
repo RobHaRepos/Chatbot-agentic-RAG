@@ -24,7 +24,7 @@
       }
     }
 
-    window.FrontendLogger = {
+    globalThis.FrontendLogger = {
       log(level, message, meta){
         const entry = {
           ts: new Date().toISOString(),
@@ -38,18 +38,18 @@
     };
 
     // Capture console methods and forward to backend
-    if(globalThis.console){
-      ['log','info','warn','error'].forEach((m)=>{
+    if (globalThis.console) {
+      for (const m of ['log', 'info', 'warn', 'error']) {
         const orig = globalThis.console[m]?.bind(globalThis.console);
-        if(!orig) return;
-        globalThis.console[m] = function(...args){
-          try{
+        if (!orig) continue;
+        globalThis.console[m] = function(...args) {
+          try {
             const msg = args.map(a => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ');
-            globalThis.FrontendLogger.log(m, msg, {href: location.href});
-          }catch(e){}
-          try{ orig(...args); }catch(_){ /* ignore */ }
+            globalThis.FrontendLogger.log(m, msg, { href: location.href });
+          } catch (e) {}
+          try { orig(...args); } catch (_) { /* ignore */ }
         };
-      });
+      }
     }
 
     // Capture uncaught errors and unhandled promise rejections
