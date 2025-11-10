@@ -40,8 +40,8 @@ async def lifespan(app: FastAPI):
     try:
         yield
     finally:
-        pass
-    
+        logger.info("retriever API shutting down.")
+
 app = FastAPI(lifespan=lifespan)
 
 @app.post("/retrieve_documents_string")
@@ -50,11 +50,11 @@ def retrieve_documents_as_string(req : SearchRequest) -> dict:
     retriever = vector_store.as_retriever(search_type="similarity", search_kwargs={"k": kk})
     docs = retriever.invoke(req.query)
     
-    complete_doc_String = ""
+    complete_doc_string = ""
     for doc in docs:
-        complete_doc_String += doc.page_content + "\n\n"
-    logger.info("retrieve_documents_as_string: complete_doc_String=%s", complete_doc_String)
-    return {"documents": complete_doc_String}
+        complete_doc_string += doc.page_content + "\n\n"
+    logger.info("retrieve_documents_as_string: complete_doc_string=%s", complete_doc_string)
+    return {"documents": complete_doc_string}
 
 @app.post("/retrieve_documents_list", response_model=DocumentsResponse)
 def retrieve_documents_as_list(req: SearchRequest) -> DocumentsResponse:

@@ -26,7 +26,13 @@ def fake_vector_store(monkeypatch):
 
     import langchain_huggingface
     class CheapEmb:
-        def __init__(self, model_name=None, **kwargs): pass
+        def __init__(self, model_name=None, **kwargs):
+            # No-op stub initializer.
+            # The real `HuggingFaceEmbeddings` performs expensive model loading
+            # and external I/O which we must avoid in unit tests. This empty
+            # initializer lets tests substitute a lightweight stand-in without
+            # triggering the external dependencies.
+            pass
     monkeypatch.setattr(langchain_huggingface, "HuggingFaceEmbeddings", CheapEmb)
 
     return fake_store
@@ -39,7 +45,7 @@ def _service_up(url: str) -> bool:
     except requests.RequestException:
         return False
 
-class TestServiceUp_retriever:
+class TestServiceUpRetriever:
     def test_service_up_happy(self, monkeypatch):
         """Service up returns True when health endpoint responds 200."""
         def _fake_get(url, timeout):

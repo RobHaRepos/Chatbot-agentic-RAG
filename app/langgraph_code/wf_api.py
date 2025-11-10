@@ -46,13 +46,11 @@ async def run_workflow(request: RunRequest):
     result = await graph.ainvoke(payload)
     return {"result": result}
 
-
 class LogEntry(BaseModel):
     ts: Optional[str] = None
     level: str
     message: str
     meta: Optional[dict] = None
-
 
 @app.post("/log", status_code=200)
 async def receive_log(entry: LogEntry):

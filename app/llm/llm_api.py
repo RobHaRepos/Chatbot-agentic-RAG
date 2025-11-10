@@ -4,6 +4,10 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from app.llm.llm import AiChatService
 from contextlib import asynccontextmanager
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 MODEL_NAME_LLM = os.environ.get("MODEL_NAME_LLM", "gpt-4.1-mini")
 TEMPERATURE_LLM = float(os.environ.get("TEMPERATURE_LLM", 0.0))
@@ -15,11 +19,11 @@ async def lifespan(app: FastAPI):
     try:
         yield
     finally:
-        pass
+        logger.info("LLM API shutting down.")
 
 app = FastAPI(lifespan=lifespan)
 
-llm_service = AiChatService(Model=ChatOpenAI, model_name=MODEL_NAME_LLM, api_key=API_KEY_LLM, max_tokens=MAX_TOKENS, temperature=TEMPERATURE_LLM)
+llm_service = AiChatService(model_class=ChatOpenAI, model_name=MODEL_NAME_LLM, api_key=API_KEY_LLM, max_tokens=MAX_TOKENS, temperature=TEMPERATURE_LLM)
 
 class GenRequest(BaseModel):
     prompt: str
@@ -27,16 +31,6 @@ class GenRequest(BaseModel):
 class GenQueryRequest(BaseModel):
     question: str
     context: str | None = None
-
-#@app.post("/generate")
-#def generate(req: GenRequest):
-#    prompt = llm_service.build_prompt(question=req.prompt)
-#    return {"text": llm_service.generate(prompt)}
-
-# @app.post("/generate_search_query")
-# def generate_search_query(req: GenQueryRequest):
-#     query = llm_service.generate_search_query(user_input=req.question, retrieved_information=req.context if req.context else "")
-#     return {"query": query}
 
 @app.post("/retrieve_or_respond")
 def retrieve_or_respond(req: GenQueryRequest):

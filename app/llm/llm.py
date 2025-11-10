@@ -13,9 +13,9 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class AiChatService:
-    def __init__(self, Model, model_name: str, api_key: str | None, max_tokens:int, temperature: float):
+    def __init__(self, model_class, model_name: str, api_key: str | None, max_tokens:int, temperature: float):
         self.model_name = model_name
-        self.model_class = Model
+        self.model_class = model_class
         self.api_key = api_key
         self.max_tokens = max_tokens
         self.temperature = temperature
@@ -35,8 +35,8 @@ class AiChatService:
         logger.info("extract_llm_response_content: extracted content=%s", content)
         return str(content)
 
-    def build_llm(self, Model=ChatOpenAI, model_name=MODEL_NAME_LLM, temperature=TEMPERATURE_LLM, max_tokens=MAX_TOKENS):
-        llm = Model(
+    def build_llm(self, model_class=ChatOpenAI, model_name=MODEL_NAME_LLM, temperature=TEMPERATURE_LLM, max_tokens=MAX_TOKENS):
+        llm = model_class(
             model=model_name,
             temperature=temperature,
             max_completion_tokens=max_tokens
@@ -63,19 +63,6 @@ class AiChatService:
         logger.info("generate_answer: generated answer=%s", content)
         return str(content)
 
-    # def generate_search_query(self, user_input: str, retrieved_information: str = "", template: list = []) -> str:
-    #     if not template:
-    #         template = ([
-    #             ("system", "You are a helpful AI assistant for a phone shop. \
-    #             Given the user question and the information from the documents, \
-    #             generate a search query that would help you find more relevant information. \n \
-    #             USER QUESTION: {user_input} \n \
-    #             INFORMATION FROM DOCUMENTS: {retrieved_information} \n\n \
-    #             Produce a short (3-8 words) search query"), 
-    #         ])
-    #     content = self.extract_llm_response_content(template, {"user_input": user_input, "retrieved_information": retrieved_information}, self.llm)
-    #     return str(content)
-
     def retrieve_or_respond(self, user_input: str, template: Optional[list[tuple[str, str]]] = None) -> Dict[str, Any]:
         if not template:
             template = ([
@@ -98,7 +85,6 @@ class AiChatService:
                 return obj
         except Exception:
             logger.exception("retrieve_or_respond: failed to parse LLM response content=%s", content)
-            pass
 
         # fallback
         logger.warning("retrieve_or_respond: falling back to clarify")

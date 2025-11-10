@@ -67,6 +67,7 @@ async def node_generate_answer(state: "OverallState") -> Dict[str, str]:
 def node_ask_clarify(state: "OverallState") -> Dict[str, str]:
     """Return a short clarification prompt to the user."""
     msg = "The query seems to be unrelated to phones. Could you be more specific? Which phone model or what detail do you mean (brand/model/specs/price)?"
+    state["clarification"] = msg
     logger.info("node_ask_clarify: emitting clarify message")
     return {"action": "clarify", "answer": msg}
     
