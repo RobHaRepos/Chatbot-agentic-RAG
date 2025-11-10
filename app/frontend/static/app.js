@@ -63,6 +63,8 @@
     setLoading(botEl, true);
 
     try{
+      // emit a frontend log for outbound question
+      try{ window.FrontendLogger && window.FrontendLogger.log('info', 'send_question', {question}); }catch(_){}
       const payload = { question };
       if(k) payload.k = k;
       const res = await fetch(API_URL, {
@@ -74,11 +76,15 @@
       if(!res.ok){
         const t = await res.text();
         botEl.querySelector('.body').innerText = 'Error: ' + res.status + ' ' + t;
+        try{ window.FrontendLogger && window.FrontendLogger.log('error', 'api_error', {status: res.status, text: t}); }catch(_){}
         setLoading(botEl, false);
         return;
       }
 
       const data = await res.json();
+
+      // log the successful response
+      try{ window.FrontendLogger && window.FrontendLogger.log('info', 'received_response', {question, result: data.result}); }catch(_){}
 
       // Attempt to render the typical result shapes
       let rendered = '';
@@ -97,6 +103,7 @@
       botEl.querySelector('.body').innerText = rendered;
     }catch(err){
       botEl.querySelector('.body').innerText = 'Request failed: ' + String(err);
+      try{ window.FrontendLogger && window.FrontendLogger.log('error', 'request_failed', {question, error: String(err)}); }catch(_){}
     }finally{
       setLoading(botEl, false);
     }
