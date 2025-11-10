@@ -1,10 +1,17 @@
 import pytest
+import asyncio
 from app.langgraph_code import wf_api
 
 @pytest.mark.anyio
 async def test_lifespan_context_manager(monkeypatch):
     class FakeGraph:
         def ainvoke(self, payload):
+            # Intentionally left as a no-op for this unit test.
+            # The real graph's `ainvoke` performs asynchronous workflow
+            # execution and may call external services; here we only need
+            # a lightweight placeholder so the lifespan context manager
+            # can attach an object with the expected API to app.state.graph.
+            # Keeping it empty avoids side-effects during unit tests.
             pass
         
     monkeypatch.setattr("app.langgraph_code.wf_api.build_workflow", lambda: FakeGraph())
@@ -39,6 +46,7 @@ def test_get_ready_sad(monkeypatch):
 async def test_run_workflow_happy(monkeypatch):
     class FakeGraph:
         async def ainvoke(self, payload):
+            await asyncio.sleep(0)
             return {"result": "This is the answer!"}
     
     fake_graph = FakeGraph()

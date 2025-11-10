@@ -1,6 +1,6 @@
 (() => {
   const apiMeta = document.querySelector('meta[name="api-base"]');
-  const API_URL = (apiMeta && apiMeta.getAttribute('content')) || '/run';
+  const API_URL = apiMeta?.getAttribute('content') || '/run';
 
   const messagesEl = document.getElementById('messages');
   const queryInput = document.getElementById('queryInput');
@@ -18,8 +18,7 @@
     meta.textContent = who === 'user' ? 'You' : 'Assistant';
     const body = document.createElement('div');
     body.className = 'body';
-    // preserve newlines
-    body.innerHTML = text.split('\n').map(escapeHtml).join('<br/>');
+    body.innerText = text;
     wrapper.appendChild(meta);
     wrapper.appendChild(body);
     messagesEl.appendChild(wrapper);
@@ -27,26 +26,45 @@
     return wrapper;
   }
 
-  function escapeHtml(s){
-    return s.replace(/[&<>\"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
+  function setLoading(el, isLoading){
+    if(!el) return;
+    el.dataset.loading = isLoading ? '1' : '0';
   }
 
-  function setLoading(el, on = true){
-    if(!el) return;
-    if(on){
-      el.dataset.loading = '1';
-      if(!el.querySelector('.spinner')){
-        const s = document.createElement('span');
-        s.className = 'spinner';
-        s.textContent = '…';
-        s.style.marginLeft = '0.5rem';
-        el.appendChild(s);
-      }
-    } else {
-      delete el.dataset.loading;
-      const sp = el.querySelector('.spinner');
-      if(sp) sp.remove();
+  // Helper: build request payload
+  function buildPayload(question, k){
+    const payload = { question };
+    if(k) payload.k = k;
+    return payload;
+  }
+
+  // Helper: log safely (fire-and-forget)
+  function safeLog(level, event, meta){
+    try{ window.FrontendLogger && window.FrontendLogger.log(level, event, meta); }catch(_){ }
+  }
+
+  // Helper: render result object into a string for display
+  function renderResultObject(data){
+    if(!data) return JSON.stringify(data, null, 2);
+    const r = data.result || data;
+    if(r && typeof r === 'object'){
+      if('answer' in r && r.answer) return (typeof r.answer === 'object') ? JSON.stringify(r.answer, null, 2) : String(r.answer);
+      if('text' in r && r.text) return String(r.text);
+      if('decision' in r) return JSON.stringify(r, null, 2);
+      return JSON.stringify(r, null, 2);
     }
+    return String(r);
+  }
+
+  async function handleErrorResponse(botEl, res, question){
+    const t = await res.text();
+    if(botEl) botEl.querySelector('.body').innerText = 'Error: ' + res.status + ' ' + t;
+    safeLog('error', 'api_error', {status: res.status, text: t, question});
+  }
+
+  async function handleException(botEl, question, err){
+    if(botEl) botEl.querySelector('.body').innerText = 'Request failed: ' + String(err);
+    safeLog('error', 'request_failed', {question, error: String(err)});
   }
 
   async function send(){
@@ -55,18 +73,14 @@
     queryInput.value = '';
     const k = kInput.value ? Number(kInput.value) : undefined;
 
-    // add user message
-    const userEl = appendMessage(question, 'user');
-
-    // add placeholder for bot
+    // add user message and placeholder for bot
+    appendMessage(question, 'user');
     const botEl = appendMessage('Thinking...', 'bot');
     setLoading(botEl, true);
 
     try{
-      // emit a frontend log for outbound question
-      try{ window.FrontendLogger && window.FrontendLogger.log('info', 'send_question', {question}); }catch(_){}
-      const payload = { question };
-      if(k) payload.k = k;
+      safeLog('info', 'send_question', {question});
+      const payload = buildPayload(question, k);
       const res = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -74,36 +88,17 @@
       });
 
       if(!res.ok){
-        const t = await res.text();
-        botEl.querySelector('.body').innerText = 'Error: ' + res.status + ' ' + t;
-        try{ window.FrontendLogger && window.FrontendLogger.log('error', 'api_error', {status: res.status, text: t}); }catch(_){}
-        setLoading(botEl, false);
+        await handleErrorResponse(botEl, res, question);
         return;
       }
 
       const data = await res.json();
+      safeLog('info', 'received_response', {question, result: data.result});
 
-      // log the successful response
-      try{ window.FrontendLogger && window.FrontendLogger.log('info', 'received_response', {question, result: data.result}); }catch(_){}
-
-      // Attempt to render the typical result shapes
-      let rendered = '';
-      if(data.result){
-        const r = data.result;
-        // if r has 'answer' use it
-        if(r.answer) rendered = (typeof r.answer === 'object') ? JSON.stringify(r.answer, null, 2) : String(r.answer);
-        else if(r.text) rendered = String(r.text);
-        else if(r.decision) rendered = JSON.stringify(r, null, 2);
-        else rendered = JSON.stringify(r, null, 2);
-      } else {
-        // fallback render whole payload
-        rendered = JSON.stringify(data, null, 2);
-      }
-
+      const rendered = renderResultObject(data);
       botEl.querySelector('.body').innerText = rendered;
     }catch(err){
-      botEl.querySelector('.body').innerText = 'Request failed: ' + String(err);
-      try{ window.FrontendLogger && window.FrontendLogger.log('error', 'request_failed', {question, error: String(err)}); }catch(_){}
+      await handleException(botEl, question, err);
     }finally{
       setLoading(botEl, false);
     }

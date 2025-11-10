@@ -18,7 +18,7 @@ def patch_build_llm(monkeypatch):
 
 def generate_decisions(user_input:str):    
     service = AiChatService(
-        Model=ChatOpenAI, 
+        model_class=ChatOpenAI, 
         model_name=MODEL_NAME_LLM, 
         api_key=API_KEY_LLM, 
         max_tokens=MAX_TOKENS, 
@@ -32,14 +32,14 @@ def generate_decisions(user_input:str):
     return decision, content
 
 def test_parameters_llm():
-    service = AiChatService(Model=ChatOpenAI, model_name=MODEL_NAME_LLM, api_key=API_KEY_LLM, max_tokens=MAX_TOKENS, temperature=TEMPERATURE_LLM)
+    service = AiChatService(model_class=ChatOpenAI, model_name=MODEL_NAME_LLM, api_key=API_KEY_LLM, max_tokens=MAX_TOKENS, temperature=TEMPERATURE_LLM)
     assert service.model_name == MODEL_NAME_LLM
     assert service.max_tokens == MAX_TOKENS
     assert service.temperature == TEMPERATURE_LLM
 
 def test_generate_simple_response(monkeypatch):    
     service = AiChatService(
-        Model=ChatOpenAI, 
+        model_class=ChatOpenAI, 
         model_name=MODEL_NAME_LLM, 
         api_key=API_KEY_LLM, 
         max_tokens=MAX_TOKENS, 
@@ -97,7 +97,6 @@ def test_generate_decision_retrieve(monkeypatch):
     print(f"Decision: {decision}, Content: {content}")
     assert decision == "retrieve"
     assert isinstance(content, str) 
-    #assert len(content) == 0
     
 def test_generate_decision_clarify(monkeypatch):
     monkeypatch.setattr(AiChatService, "retrieve_or_respond", lambda self, user_input: {"decision": "clarify", "answer": ""})
@@ -105,7 +104,6 @@ def test_generate_decision_clarify(monkeypatch):
     print(f"Decision: {decision}, Content: {content}")
     assert decision == "clarify"
     assert isinstance(content, str) 
-    #assert len(content) > 0
 
 def test_retrieve_or_respond_fallback(monkeypatch):
     monkeypatch.setattr(AiChatService, "build_llm",
@@ -115,7 +113,7 @@ def test_retrieve_or_respond_fallback(monkeypatch):
     monkeypatch.setattr(AiChatService, "extract_llm_response_content",
                         lambda self, template, variables, llm: "Non-JSON response")
 
-    svc = AiChatService(Model=ChatOpenAI, model_name=MODEL_NAME_LLM, api_key=API_KEY_LLM,
+    svc = AiChatService(model_class=ChatOpenAI, model_name=MODEL_NAME_LLM, api_key=API_KEY_LLM,
                         max_tokens=MAX_TOKENS, temperature=TEMPERATURE_LLM)
 
     result = svc.retrieve_or_respond(user_input="Some unrelated question")
@@ -124,7 +122,7 @@ def test_retrieve_or_respond_fallback(monkeypatch):
 
 def test_generate_full_answer(monkeypatch):
     service = AiChatService(
-        Model=ChatOpenAI, 
+        model_class=ChatOpenAI, 
         model_name=MODEL_NAME_LLM, 
         api_key=API_KEY_LLM, 
         max_tokens=MAX_TOKENS, 

@@ -1,4 +1,5 @@
 import pytest
+import asyncio
 from typing import cast, Any
 from app.langgraph_code.workflow import OverallState
 from app.langgraph_code.nodes import (
@@ -38,6 +39,7 @@ class FakeAsyncClient:
         self.last_request = None
         
     async def post(self, url, json):
+        await asyncio.sleep(0)
         self.last_request = (url, json)
         return self._response
     
