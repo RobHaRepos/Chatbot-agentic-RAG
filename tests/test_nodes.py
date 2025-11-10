@@ -139,6 +139,6 @@ def test_node_ask_clarify(state_factory):
     result = node_ask_clarify(state)
     assert isinstance(result, dict)
     assert "answer" in result
-    assert "Could you be more specific? Which phone model or what detail do you mean (brand/model/specs/price)?" in result["message"]
+    assert "The query seems to be unrelated to phones. Could you be more specific? Which phone model or what detail do you mean (brand/model/specs/price)?" in result["answer"]
     assert "action" in result
     assert "clarify" in result["action"]
