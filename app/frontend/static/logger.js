@@ -8,7 +8,7 @@
       LOG_ENDPOINT = url.origin + '/log';
     } catch (err) {
       LOG_ENDPOINT = '/log';
-      try { console?.warn?.('FrontendLogger: invalid API_BASE, falling back to /log', err && err.message); } catch (_) { }
+  try { console?.warn?.('FrontendLogger: invalid API_BASE, falling back to /log', err?.message); } catch (_) { }
     }
 
     async function sendLog(payload){
@@ -19,8 +19,9 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
-      }catch(_){
-        // ignore network/logging failures silently
+      } catch (err) {
+        // Surface network/logging failures to the console so they're visible during development.
+        console?.warn?.('FrontendLogger: sendLog failed', err?.message);
       }
     }
 
@@ -45,9 +46,18 @@
         globalThis.console[m] = function(...args) {
           try {
             const msg = args.map(a => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ');
-            globalThis.FrontendLogger.log(m, msg, { href: location.href });
-          } catch (e) {}
-          try { orig(...args); } catch (_) { /* ignore */ }
+            // If FrontendLogger.log throws, use the original console method to report it so it isn't swallowed.
+            try {
+              globalThis.FrontendLogger.log(m, msg, { href: location.href });
+            } catch (e) {
+              try { orig('FrontendLogger.log failed', e?.message); } catch (_) { /* last-resort ignore */ }
+            }
+          } catch (e) {
+            // Any unexpected error while formatting the message should be reported via original console
+            try { orig('FrontendLogger formatting failed', e?.message); } catch (_) { /* last-resort ignore */ }
+          }
+          // Call the original console method and allow exceptions to bubble rather than silently swallowing them.
+          return orig(...args);
         };
       }
     }

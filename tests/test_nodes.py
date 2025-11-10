@@ -1,5 +1,5 @@
 import pytest
-import anyio
+from anyio import lowlevel
 from typing import cast, Any
 from app.langgraph_code.workflow import OverallState
 from app.langgraph_code.nodes import (
@@ -39,8 +39,7 @@ class FakeAsyncClient:
         self.last_request = None
         
     async def post(self, url, json):
-        # yield control to the active anyio backend (works with trio, asyncio, etc.)
-        await anyio.sleep(0)
+        await lowlevel.checkpoint()
         self.last_request = (url, json)
         return self._response
     

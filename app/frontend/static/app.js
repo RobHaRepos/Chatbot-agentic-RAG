@@ -43,10 +43,7 @@
     try {
       globalThis?.FrontendLogger?.log(level, event, meta);
     } catch (err) {
-      try {
-        console.error('FrontendLogger failed', { level, event, meta, err });
-      } catch (error_) {
-      }
+      console?.error?.('FrontendLogger failed', { level, event, meta, err });
     }
   }
 

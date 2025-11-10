@@ -1,5 +1,5 @@
 import pytest
-import anyio
+from anyio import lowlevel
 from app.langgraph_code import wf_api
 
 @pytest.mark.anyio
@@ -46,7 +46,8 @@ def test_get_ready_sad(monkeypatch):
 async def test_run_workflow_happy(monkeypatch):
     class FakeGraph:
         async def ainvoke(self, payload):
-            await anyio.sleep(0)
+            # yield to the active anyio backend (trio/asyncio)
+            await lowlevel.checkpoint()
             return {"result": "This is the answer!"}
     
     fake_graph = FakeGraph()
