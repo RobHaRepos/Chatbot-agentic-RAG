@@ -1,4 +1,4 @@
-from workflow import build_workflow
+from .workflow import build_workflow
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
