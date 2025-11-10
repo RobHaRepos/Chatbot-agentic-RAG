@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from pydantic import BaseModel
 from typing import Optional
 import logging
+import hashlib
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -60,14 +61,26 @@ async def receive_log(entry: LogEntry):
     to the "frontend_logs" logger which you can configure with handlers in production.
     """
     logger = logging.getLogger("frontend_logs")
-    msg = f"[frontend] {entry.ts or ''} {entry.message} {entry.meta or ''}"
+
+    raw_msg = (entry.message or "")
+    try:
+        msg_bytes = raw_msg.encode("utf-8", errors="replace")
+    except Exception:
+        msg_bytes = b""
+
+    msg_hash = hashlib.sha256(msg_bytes).hexdigest() if msg_bytes else None
+    msg_len = len(msg_bytes)
+
     lvl = (entry.level or "info").lower()
+    log_message = "[frontend] ts=%s level=%s msg_hash=%s msg_len=%d"
+    log_params = (entry.ts or "", lvl, msg_hash or "", msg_len)
+
     if lvl in ("error",):
-        logger.error(msg)
+        logger.error(log_message, *log_params)
     elif lvl in ("warn", "warning"):
-        logger.warning(msg)
+        logger.warning(log_message, *log_params)
     elif lvl in ("info", "log"):
-        logger.info(msg)
+        logger.info(log_message, *log_params)
     else:
-        logger.debug(msg)
+        logger.debug(log_message, *log_params)
     return {"status": "ok"}
