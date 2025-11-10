@@ -59,11 +59,6 @@ async def node_generate_answer(state: "OverallState") -> Dict[str, str]:
         logger.info("node_generate_answer: LLM returned %s", resp)
         return {"action": "answer", "answer": resp.get("answer", "")}
 
-#def node_rewrite_question(question: str, context: str, llm_api_url: str = LLM_API_URL) -> str:
-#    r = httpx.post(f"{llm_api_url}/generate_search_query", json={"question": question, "context": context}, timeout=30.0)
-#    r.raise_for_status()
-#    return r.json().get("query", "")
-
 def node_ask_clarify(state: "OverallState") -> Dict[str, str]:
     """Return a short clarification prompt to the user."""
     msg = "The query seems to be unrelated to phones. Could you be more specific? Which phone model or what detail do you mean (brand/model/specs/price)?"

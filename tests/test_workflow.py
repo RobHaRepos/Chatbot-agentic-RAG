@@ -52,5 +52,5 @@ def test_build_workflow():
         "clarify",
     }
 
-    node_names = {node for node in graph.nodes}
+    node_names = set(graph.nodes)
     assert expected_nodes.issubset(node_names)

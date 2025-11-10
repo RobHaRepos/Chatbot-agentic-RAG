@@ -45,7 +45,7 @@
     } catch (err) {
       try {
         console.error('FrontendLogger failed', { level, event, meta, err });
-      } catch (consoleErr) {
+      } catch (error_) {
       }
     }
   }

@@ -8,7 +8,7 @@
       LOG_ENDPOINT = url.origin + '/log';
     } catch (err) {
       LOG_ENDPOINT = '/log';
-      try { console && console.warn && console.warn('FrontendLogger: invalid API_BASE, falling back to /log', err && err.message); } catch (_) { }
+      try { console?.warn?.('FrontendLogger: invalid API_BASE, falling back to /log', err && err.message); } catch (_) { }
     }
 
     async function sendLog(payload){
