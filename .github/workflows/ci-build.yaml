@@ -42,6 +42,9 @@ jobs:
       - name: Run tests with pytest
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          PYTHONPATH: ${{ github.workspace }}
         run: | 
           python -m pytest -q --maxfail=1
+
+
       
