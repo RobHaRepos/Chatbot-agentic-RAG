@@ -40,7 +40,14 @@
 
   // Helper: log safely (fire-and-forget)
   function safeLog(level, event, meta){
-    try{ window.FrontendLogger && window.FrontendLogger.log(level, event, meta); }catch(_){ }
+    try {
+      globalThis?.FrontendLogger?.log(level, event, meta);
+    } catch (err) {
+      try {
+        console.error('FrontendLogger failed', { level, event, meta, err });
+      } catch (consoleErr) {
+      }
+    }
   }
 
   // Helper: render result object into a string for display

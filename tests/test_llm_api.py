@@ -5,7 +5,7 @@ from tests.test_retriever import _service_up
 
 BASE_URL = "http://localhost:8002"
 
-class TestServiceUp_llm:
+class TestServiceUpLlm:
     def test_service_up_happy(self, monkeypatch):
         def _fake_get(url, timeout):
             return SimpleNamespace(status_code=200)

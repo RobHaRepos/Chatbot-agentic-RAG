@@ -45,7 +45,7 @@ def _mocked_vector_store(ntotal=3):
             return FakeRetriever()
     return FakeVectorStore()
 
-def test_FastAPI_startup_monkeypatch(monkeypatch):
+def test_fastapi_startup_monkeypatch(monkeypatch):
     from fastapi.testclient import TestClient
     import app.rag.retriever as retriever
     
