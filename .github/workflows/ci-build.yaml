@@ -62,20 +62,6 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-      # - name: Run Snyk Vulnerability Scan
-      #   uses: snyk/actions/python@e2221410bff24446ba09102212d8bc75a567237d # v1.0.0
-      #   continue-on-error: true
-      #   env: 
-      #     SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      #   with:
-      #     args: --sarif-file-output=snyk-report.sarif
-
-      # - name: Upload Snyk SARIF report
-      #   uses: github/codeql-action/upload-sarif@v4
-      #   with:
-      #     sarif_file: snyk-report.sarif
-
-      # install Snyk CLI in the runner
       - name: Install Snyk CLI
         run: |
           curl https://downloads.snyk.io/cli/stable/snyk-linux -o snyk-linux
@@ -88,4 +74,5 @@ jobs:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         run: |
           # Run Snyk against the CI requirements (omits heavy runtime ML deps like torch)
-          snyk test --file=requirements-ci.txt
+          # explicitly tell Snyk this is a pip/requirements file so it detects the package manager
+          snyk test --file=requirements-ci.txt --package-manager=pip
