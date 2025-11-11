@@ -62,17 +62,28 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-      - name: Run Snyk Vulnerability Scan
+      # - name: Run Snyk Vulnerability Scan
+      #   uses: snyk/actions/python@e2221410bff24446ba09102212d8bc75a567237d # v1.0.0
+      #   continue-on-error: true
+      #   env: 
+      #     SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      #   with:
+      #     args: --sarif-file-output=snyk-report.sarif
+
+      # - name: Upload Snyk SARIF report
+      #   uses: github/codeql-action/upload-sarif@v4
+      #   with:
+      #     sarif_file: snyk-report.sarif
+
+      # install Snyk CLI in the runner
+      - name: Run Snyk to check for vulnerabilities
         uses: snyk/actions/python@e2221410bff24446ba09102212d8bc75a567237d # v1.0.0
-        continue-on-error: true
-        env: 
+        continue-on-error: true 
+        env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          args: --sarif-file-output=snyk-report.sarif
-
-      - name: Upload Snyk SARIF report
-        uses: github/codeql-action/upload-sarif@v4
+          args: --sarif-file-output=snyk.sarif
+      - name: Upload result to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: snyk-report.sarif
-
-
+          sarif_file: snyk.sarif
