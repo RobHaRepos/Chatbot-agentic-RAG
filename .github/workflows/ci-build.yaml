@@ -76,14 +76,15 @@ jobs:
       #     sarif_file: snyk-report.sarif
 
       # install Snyk CLI in the runner
-      - name: Run Snyk to check for vulnerabilities
-        uses: snyk/actions/python@e2221410bff24446ba09102212d8bc75a567237d # v1.0.0
-        continue-on-error: true 
+      - name: Install Snyk CLI
+        run: |
+          curl https://downloads.snyk.io/cli/stable/snyk-linux -o snyk-linux
+          curl https://downloads.snyk.io/cli/stable/snyk-linux.sha256 -o snyk.sha256
+          sha256sum -c snyk.sha256
+          chmod +x snyk-linux
+          sudo mv snyk-linux /usr/local/bin/snyk
+      - name: Run Snyk to test project dependencies
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          args: --sarif-file-output=snyk.sarif
-      - name: Upload result to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: snyk.sarif
+        run: |
+          snyk test
