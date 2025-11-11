@@ -17,4 +17,13 @@ ENV PORT=8000 \
 
 EXPOSE 8000
 
+# switch to a non-root, unprivileged user for runtime.
+RUN groupadd -g 1000 appuser \
+    && useradd -u 1000 -g appuser -m -d /home/appuser -s /bin/sh appuser \
+    && chown -R appuser:appuser /app
+
+ENV HOME=/home/appuser PYTHONUNBUFFERED=1
+
+USER appuser
+
 CMD ["python", "-m", "uvicorn", "app.langgraph_code.wf_api:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers"]
