@@ -87,4 +87,5 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         run: |
-          snyk test
+          # Run Snyk against the CI requirements (omits heavy runtime ML deps like torch)
+          snyk test --file=requirements-ci.txt
