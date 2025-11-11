@@ -43,16 +43,12 @@
         const orig = globalThis.console[m]?.bind(globalThis.console);
         if (!orig) continue;
         globalThis.console[m] = function(...args) {
+          const msg = args.map(a => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ');
           try {
-            const msg = args.map(a => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ');
-            try {
-              globalThis.FrontendLogger.log(m, msg, { href: location.href });
-            } catch (e) {
-              try { orig('FrontendLogger.log failed', e?.message); } catch (_) { /* last-resort ignore */ }
-              throw e;
-            }
+            globalThis.FrontendLogger.log(m, msg, { href: location.href });
           } catch (e) {
-            try { orig('FrontendLogger formatting failed', e?.message); } catch (_) { /* last-resort ignore */ }
+            try { orig('FrontendLogger.log failed', e?.message); } catch (_) { /* last-resort ignore */ }
+            throw e;
           }
           return orig(...args);
         };
