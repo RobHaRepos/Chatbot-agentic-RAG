@@ -55,12 +55,12 @@ jobs:
           python -m pytest -q --maxfail=1 --cov=app --cov-report=xml:coverage.xml
 
       - name: Run SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@v6.0.0
+        uses: SonarSource/sonarqube-scan-action@fd88b7d7ccbaefd23d8f36f73b59db7a3d246602 # v6.0.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       - name: Run Snyk Vulnerability Scan
-        uses: snyk/actions/python@master
+        uses: snyk/actions/python@e2221410bff24446ba09102212d8bc75a567237d # v1.0.0
         continue-on-error: true
         env: 
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
