@@ -1,0 +1,94 @@
+{
+  "ignore": {
+    "SNYK-PYTHON-TORCH-10332643": [
+      {
+        "reason": "Runtime-only ML dependency (torch). These are native/compiled issues tracked upstream; not exploitable in CI test environment. See SECURITY.md for context.",
+        "expires": "2026-02-01",
+        "paths": [
+          "requirements.txt"
+        ]
+      }
+    ],
+    "SNYK-PYTHON-TORCH-10332644": [
+      {
+        "reason": "Runtime-only ML dependency (torch). These are native/compiled issues tracked upstream; not exploitable in CI test environment. See SECURITY.md for context.",
+        "expires": "2026-02-01",
+        "paths": [
+          "requirements.txt"
+        ]
+      }
+    ],
+    "SNYK-PYTHON-TORCH-10332645": [
+      {
+        "reason": "Runtime-only ML dependency (torch). These are native/compiled issues tracked upstream; not exploitable in CI test environment. See SECURITY.md for context.",
+        "expires": "2026-02-01",
+        "paths": [
+          "requirements.txt"
+        ]
+      }
+    ],
+    "SNYK-PYTHON-TORCH-10337825": [
+      {
+        "reason": "Runtime-only ML dependency (torch). These are native/compiled issues tracked upstream; not exploitable in CI test environment. See SECURITY.md for context.",
+        "expires": "2026-02-01",
+        "paths": [
+          "requirements.txt"
+        ]
+      }
+    ],
+    "SNYK-PYTHON-TORCH-10337826": [
+      {
+        "reason": "Runtime-only ML dependency (torch). These are native/compiled issues tracked upstream; not exploitable in CI test environment. See SECURITY.md for context.",
+        "expires": "2026-02-01",
+        "paths": [
+          "requirements.txt"
+        ]
+      }
+    ],
+    "SNYK-PYTHON-TORCH-10337828": [
+      {
+        "reason": "Runtime-only ML dependency (torch). These are native/compiled issues tracked upstream; not exploitable in CI test environment. See SECURITY.md for context.",
+        "expires": "2026-02-01",
+        "paths": [
+          "requirements.txt"
+        ]
+      }
+    ],
+    "SNYK-PYTHON-TORCH-10337834": [
+      {
+        "reason": "Runtime-only ML dependency (torch). These are native/compiled issues tracked upstream; not exploitable in CI test environment. See SECURITY.md for context.",
+        "expires": "2026-02-01",
+        "paths": [
+          "requirements.txt"
+        ]
+      }
+    ],
+    "SNYK-PYTHON-TORCH-13052805": [
+      {
+        "reason": "Runtime-only ML dependency (torch). These are native/compiled issues tracked upstream; not exploitable in CI test environment. See SECURITY.md for context.",
+        "expires": "2026-02-01",
+        "paths": [
+          "requirements.txt"
+        ]
+      }
+    ],
+    "SNYK-PYTHON-TORCH-13052969": [
+      {
+        "reason": "Runtime-only ML dependency (torch). These are native/compiled issues tracked upstream; not exploitable in CI test environment. See SECURITY.md for context.",
+        "expires": "2026-02-01",
+        "paths": [
+          "requirements.txt"
+        ]
+      }
+    ],
+    "SNYK-PYTHON-TORCH-13052971": [
+      {
+        "reason": "Runtime-only ML dependency (torch). These are native/compiled issues tracked upstream; not exploitable in CI test environment. See SECURITY.md for context.",
+        "expires": "2026-02-01",
+        "paths": [
+          "requirements.txt"
+        ]
+      }
+    ]
+  }
+}
