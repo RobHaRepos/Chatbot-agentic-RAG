@@ -1,4 +1,4 @@
-FROM nginx:stable-alpine
+FROM nginx:1.29.3-alpine3.22-slim 
 LABEL org.opencontainers.image.title="langgraph-frontend"
 WORKDIR /usr/share/nginx/html
 
