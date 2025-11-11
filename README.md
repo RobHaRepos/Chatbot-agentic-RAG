@@ -1,4 +1,4 @@
-[![CI](https://github.com/RobHaRepos/Chatbot-agentic-RAG/actions/workflows/ci-build.yaml/badge.svg)](https://github.com/RobHaRepos/Chatbot-agentic-RAG/actions/workflows/ci-build.yaml) [![SonarCloud Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=YOUR_SONARCLOUD_PROJECT_KEY&metric=alert_status)](https://sonarcloud.io/summary/overall?id=YOUR_SONARCLOUD_PROJECT_KEY)
+[![CI](https://github.com/RobHaRepos/Chatbot-agentic-RAG/actions/workflows/ci-build.yaml/badge.svg)](https://github.com/RobHaRepos/Chatbot-agentic-RAG/actions/workflows/ci-build.yaml) [![SonarCloud Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=YOUR_SONARCLOUD_PROJECT_KEY&metric=alert_status)](https://sonarcloud.io/summary/overall?id=YOUR_SONARCLOUD_PROJECT_KEY) [![Snyk Vulnerabilities](https://snyk.io/test/github/RobHaRepos/Chatbot-agentic-RAG/badge.svg)](https://snyk.io/test/github/RobHaRepos/Chatbot-agentic-RAG)
 
 # Chatbot-agentic-RAG
 
