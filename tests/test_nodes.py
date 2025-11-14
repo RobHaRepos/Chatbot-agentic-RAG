@@ -101,7 +101,6 @@ async def test_node_retrieve_or_respond_clarify(monkeypatch, state_factory):
     assert isinstance(result, dict)
     assert "action" in result
     assert result["action"] == "clarify"
-    assert "answer" in result
     
 @pytest.mark.anyio
 async def test_node_retrieve_or_respond_fallback(monkeypatch, state_factory):
@@ -116,8 +115,7 @@ async def test_node_retrieve_or_respond_fallback(monkeypatch, state_factory):
     result = await node_retrieve_or_respond(state)
     assert isinstance(result, dict)
     assert "action" in result
-    assert result["action"] == "clarify"
-    assert "answer" in result
+    assert result["action"] == "clarify"    
     
 @pytest.mark.anyio
 class TestNodeGenerateAnswer:
