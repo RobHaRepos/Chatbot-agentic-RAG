@@ -1,4 +1,5 @@
 import os
+import ast
 from langchain_openai import ChatOpenAI
 from fastapi import FastAPI 
 from pydantic import BaseModel
@@ -30,6 +31,7 @@ class GenRequest(BaseModel):
     
 class GenQueryRequest(BaseModel):
     question: str
+    documents: str | None = None
     context: str | None = None
 
 @app.post("/retrieve_or_respond")
@@ -39,8 +41,19 @@ def retrieve_or_respond(req: GenQueryRequest):
 
 @app.post("/generate_answer")
 def generate_answer(req: GenQueryRequest):
-    answer = llm_service.generate_answer(user_input=req.question, retrieved_information=req.context if req.context else "")
-    return {"answer": answer}
+    logger.info("generate_answer_api: received context: %s", req.context)
+    if req.question is None or req.question.strip() == "":
+        return {"answer": "I'm sorry, but I need a question to provide an answer."}
+    answer = llm_service.generate_answer(
+        user_input=req.question, 
+        retrieved_information=req.documents if req.documents else "", 
+        context=req.context if req.context else ""
+        )
+    logger.info("generate_answer_api: returned answer: %s", answer)
+    if answer.strip().startswith("{"):
+        response = ast.literal_eval(answer) 
+        return response
+    return answer
 
 @app.get("/ready")
 def readiness_check():

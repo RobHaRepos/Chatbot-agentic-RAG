@@ -11,7 +11,7 @@ services:
     environment:
       PATH_TO_FAISS_INDEX: /data/faiss_index
       MODEL_NAME_EMBEDDING: "sentence-transformers/all-MiniLM-L6-v2"
-      NUMBER_OF_DOCUMENTS_TO_RETRIEVE: 5
+      NUMBER_OF_DOCUMENTS_TO_RETRIEVE: 10
     volumes:
       - ./faiss_Hugging_index:/data/faiss_index:ro
       - hf_cache:/root/.cache/huggingface
@@ -54,6 +54,7 @@ services:
     environment:
       LANGGRAPH_RETRIEVER_API_URL: "http://retriever:8001"
       LANGGRAPH_LLM_API_URL: "http://llm:8002"
+      MAX_RETRIEVES: "${MAX_RETRIEVES:-4}"
     depends_on:
       - retriever
       - llm

@@ -1,59 +1,76 @@
 from typing import Optional, TypedDict
 from langgraph.graph import StateGraph, START, END
 from .nodes import (
-    #node_retrieve_list,
     node_retrieve_string,
     node_generate_answer,
-    #node_rewrite_question,
     node_retrieve_or_respond,
     node_ask_clarify
 )
 
 class OverallState(TypedDict):
     question: str
-    decision: Optional[str]
+    query: str
     k: Optional[int]
     action: Optional[str]
     context: Optional[str]
     answer: Optional[str]
     clarification: Optional[str]
-    documents: Optional[list[str]]
+    documents: Optional[str]
+    retrieval_counter: int
+    
 
-def decision_router(state: OverallState):
-    # State is a dict-like mapping at runtime; use .get to read the decision reliably
-    decision = state.get("decision") if isinstance(state, dict) else getattr(state, "decision", None)
+def action_router(state: OverallState):
+    """Route based on the 'action' field in OverallState."""
+    action = state.get("action") if isinstance(state, dict) else getattr(state, "action", None)
 
-    if decision == "clarify":
+    if action == "clarify":
         return "clarify"
-    elif decision == "answer":
+    elif action == "answer":
         return "answer"
-    elif decision == "retrieve":
+    elif action == "retrieve":
         return "retrieve"
     
     return END
 
+
+def initial_state(question: str, k: Optional[int] = None) -> OverallState:
+    """Create a fresh OverallState for each run of the workflow."""
+    return {
+        "question": question,
+        "query": question,
+        "k": k,
+        "action": None,
+        "context": "",
+        "answer": "",
+        "clarification": None,
+        "documents": "",
+        "retrieval_counter": 0,
+    }
+
 def build_workflow():
+    """Build the LangGraph workflow for the RAG chatbot."""
     wf = StateGraph(OverallState)
 
-    # node name must match edges below — use 'generate_retrieve_or_respond'
     wf.add_node("generate_retrieve_or_respond", node_retrieve_or_respond)
     wf.add_node("retrieve", node_retrieve_string)
-    #wf.add_node("rewrite_question", node_rewrite_question)
     wf.add_node("answer", node_generate_answer)
     wf.add_node("clarify", node_ask_clarify)
 
     wf.add_edge(START, "generate_retrieve_or_respond")
     wf.add_conditional_edges("generate_retrieve_or_respond", 
-                             decision_router,{
+                             action_router,{
                                 "retrieve": "retrieve",
                                 "clarify": "clarify",
-                                "answer": "answer",
-                                END: END,
                             })
-    #Add edge: retrieve --> evaluate if enough info to answer --> answer or rewrite_question
     
     wf.add_edge("retrieve", "answer")
-    wf.add_edge("answer", END)
+    wf.add_conditional_edges("answer",
+                            action_router,{
+                                "retrieve": "retrieve",
+                                "clarify": "clarify",
+                                END: END,
+                        })
+
     wf.add_edge("clarify", END)
     
     graph = wf.compile()

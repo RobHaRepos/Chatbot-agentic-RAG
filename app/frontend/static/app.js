@@ -54,7 +54,7 @@
     if(r && typeof r === 'object'){
       if('answer' in r && r.answer) return (typeof r.answer === 'object') ? JSON.stringify(r.answer, null, 2) : String(r.answer);
       if('text' in r && r.text) return String(r.text);
-      if('decision' in r) return JSON.stringify(r, null, 2);
+      if('action' in r) return JSON.stringify(r, null, 2);
       return JSON.stringify(r, null, 2);
     }
     return String(r);

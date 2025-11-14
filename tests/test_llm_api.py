@@ -50,8 +50,8 @@ def test_retrieve_or_respond_retrieve():
     resp = requests.post(f"{BASE_URL}/retrieve_or_respond", json=payload)
     assert resp.status_code == 200
     j = resp.json()
-    assert "decision" in j
-    assert j["decision"] == "retrieve"
+    assert "action" in j
+    assert j["action"] == "retrieve"
 
 @pytest.mark.skipif(not _service_up(url=BASE_URL), reason="LLM service is not running")
 def test_retrieve_or_respond_clarify():
@@ -59,8 +59,8 @@ def test_retrieve_or_respond_clarify():
     resp = requests.post(f"{BASE_URL}/retrieve_or_respond", json=payload)
     assert resp.status_code == 200
     j = resp.json()
-    assert "decision" in j
-    assert j["decision"] == "clarify"
+    assert "action" in j
+    assert j["action"] == "clarify"
 
 @pytest.mark.skipif(not _service_up(url=BASE_URL), reason="LLM service is not running")
 def test_generate_answer_endpoint():
@@ -70,9 +70,7 @@ def test_generate_answer_endpoint():
     }
     resp = requests.post(f"{BASE_URL}/generate_answer", json=payload)
     assert resp.status_code == 200
-    j = resp.json()
-    assert "answer" in j
-    answer = j["answer"]
+    answer = resp.json()
     assert isinstance(answer, str)
     assert len(answer) > 0
     assert "Iphone 16 MAX".lower() in answer.lower()
