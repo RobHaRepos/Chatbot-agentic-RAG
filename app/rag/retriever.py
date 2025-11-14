@@ -10,13 +10,18 @@ import os
 from pathlib import Path
 
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("retriever_service")
+if not logger.handlers:
+    handler = logging.StreamHandler()
+    formatter = logging.Formatter("%(asctime)s %(levelname)s %(name)s - %(message)s")
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
 
 # environment-driven configurations
 PATH_TO_FAISS_INDEX = os.environ.get("PATH_TO_FAISS_INDEX", str(Path(__file__).resolve().parent.parent.parent / "faiss_Hugging_index"))
 MODEL_NAME_EMBEDDING = os.environ.get("MODEL_NAME_EMBEDDING", "")
-NUMBER_OF_DOCUMENTS_TO_RETRIEVE = int(os.environ.get("NUMBER_OF_DOCUMENTS_TO_RETRIEVE", 5))
+NUMBER_OF_DOCUMENTS_TO_RETRIEVE = int(os.environ.get("NUMBER_OF_DOCUMENTS_TO_RETRIEVE", 10))
 
 class SearchRequest(BaseModel):
     query: str
@@ -52,8 +57,8 @@ def retrieve_documents_as_string(req : SearchRequest) -> dict:
     
     complete_doc_string = ""
     for doc in docs:
-        complete_doc_string += doc.page_content + "\n\n"
-    logger.info("retrieve_documents_as_string: complete_doc_string=%s", complete_doc_string)
+        complete_doc_string += doc.page_content + "\n"
+    #logger.info("retrieve_documents_as_string: complete_doc_string=%s", complete_doc_string)
     return {"documents": complete_doc_string}
 
 @app.post("/retrieve_documents_list", response_model=DocumentsResponse)

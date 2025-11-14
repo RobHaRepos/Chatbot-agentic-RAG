@@ -1,5 +1,4 @@
 import os
-import time
 import pytest
 from fastapi.testclient import TestClient
 from app.langgraph_code.wf_api import app
@@ -9,23 +8,15 @@ from tests.test_retriever import _service_up
 @pytest.mark.integration
 def test_wf_api_run_workflow_happy():
     with TestClient(app) as client:
-        # Wait for readiness
-        timeout = int(os.environ.get("INTEGRATION_TIMEOUT", "120"))
-        start_time = time.time()
         while True:
             r = client.get("/ready")
             if r.status_code == 200 and r.json().get("status") is True:
                 break
-            if time.time() - start_time > timeout:
-                pytest.fail("WF API did not become ready in time")
-            time.sleep(2)
         
-        # Health check
         r = client.get("/health")
         assert r.status_code == 200
         assert r.json() == {"status": "ok"}
         
-        # Now run the workflow
         payload = {"question": "What is the newest iPhone?", "k": 5}
         r = client.post("/run", json=payload)
         assert r.status_code == 200
@@ -33,3 +24,40 @@ def test_wf_api_run_workflow_happy():
         assert "result" in result
         assert isinstance(result["result"], dict) 
         assert "iPhone 15 Pro Max".lower() in result["result"].get("answer").lower()
+
+@pytest.mark.skipif(not _service_up(url=os.environ.get("RETRIEVER_SERVICE_URL", "http://localhost:8001")), reason="Retriever service is not running")
+@pytest.mark.integration
+def test_wf_api_run_workflow_multiple_retrieves():
+    with TestClient(app) as client:
+        while True:
+            r = client.get("/ready")
+            if r.status_code == 200 and r.json().get("status") is True:
+                break
+    
+        payload = {"question": "What is the newest iphone, what display does it have, what camera does it have?", "k": 5}
+        r = client.post("/run", json=payload)
+        assert r.status_code == 200
+        result = r.json()
+        assert "result" in result
+        assert isinstance(result["result"], dict) 
+        assert "display" in result["result"].get("answer", "").lower()  
+        assert "camera" in result["result"].get("answer", "").lower()
+    
+
+@pytest.mark.skipif(not _service_up(url=os.environ.get("RETRIEVER_SERVICE_URL", "http://localhost:8001")), reason="Retriever service is not running")
+@pytest.mark.integration
+def test_run_workflow_no_question():
+    with TestClient(app) as client:
+        while True:
+            r = client.get("/ready")
+            if r.status_code == 200 and r.json().get("status") is True:
+                break
+    
+        payload = {"question": "", "k": 5}
+        r = client.post("/run", json=payload)
+        assert r.status_code == 200
+        result = r.json()
+        assert "result" in result
+        assert "The query seems to be unrelated to phones. Could you be more specific? Which phone model or what detail do you mean (brand/model/specs/price)?" in result["result"].get("answer", "")
+        
+        

@@ -1,4 +1,4 @@
-from .workflow import build_workflow
+from .workflow import build_workflow, initial_state
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -43,8 +43,8 @@ class RunRequest(BaseModel):
 @app.post("/run")
 async def run_workflow(request: RunRequest):
     graph = app.state.graph
-    payload = {"question": request.question, "k": request.k}
-    result = await graph.ainvoke(payload)
+    state = initial_state(request.question, request.k)
+    result = await graph.ainvoke(state)
     return {"result": result}
 
 class LogEntry(BaseModel):

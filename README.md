@@ -1,4 +1,4 @@
-[![CI](https://github.com/RobHaRepos/Chatbot-agentic-RAG/actions/workflows/ci-build.yaml/badge.svg)](https://github.com/RobHaRepos/Chatbot-agentic-RAG/actions/workflows/ci-build.yaml) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=RobHaReposChatbotAgenticRag&metric=alert_status&token=4d160f287316ca3bbd8bdcf28b10ea3fcb540329)](https://sonarcloud.io/summary/new_code?id=RobHaReposChatbotAgenticRag) [![Snyk Vulnerabilities](https://snyk.io/test/github/RobHaRepos/Chatbot-agentic-RAG/badge.svg)](https://snyk.io/test/github/RobHaRepos/Chatbot-agentic-RAG)
+[![CI](https://github.com/RobHaRepos/Chatbot-agentic-RAG/actions/workflows/ci-build.yaml/badge.svg)](https://github.com/RobHaRepos/Chatbot-agentic-RAG/actions/workflows/ci-build.yaml) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=RobHaReposChatbotAgenticRag&metric=alert_status&token=4d160f287316ca3bbd8bdcf28b10ea3fcb540329)](https://sonarcloud.io/summary/new_code?id=RobHaReposChatbotAgenticRag) [![Snyk Vulnerabilities](https://snyk.io/test/github/RobHaRepos/Chatbot-agentic-RAG/badge.svg)](https://snyk.io/test/github/RobHaRepos/Chatbot-agentic-RAG)[![Coverage](https://codecov.io/gh/OWNER/REPO/branch/main/graph/badge.svg?token=CODECOV_TOKEN)](https://codecov.io/gh/OWNER/REPO)[![Python](https://img.shields.io/badge/python-3.13-blue)](https://www.python.org/)
 
 # Chatbot-agentic-RAG
 
@@ -20,7 +20,7 @@ A small LangGraph-based RAG (Retrieval-Augmented Generation) demo that composes 
 - `app/` - application services and code
   - `config.py` - common config defaults and constants (paths, model names, tokens)
   - `langgraph_code/` - LangGraph workflow and FastAPI wrapper
-    - `workflow.py` - builds the StateGraph and routes decisions
+    - `workflow.py` - builds the StateGraph and routes actions
     - `nodes.py` - node implementations that call retriever and LLM services
     - `wf_api.py` - FastAPI wrapper for running the compiled graph (`/run`, `/health`, `/ready`)
     - `visualization.py` - (graph export/visual helpers)
@@ -46,6 +46,47 @@ A small LangGraph-based RAG (Retrieval-Augmented Generation) demo that composes 
    - LLM service at `LANGGRAPH_LLM_API_URL` (default `http://localhost:8002`) — exposes `/retrieve_or_respond` and `/generate_answer`.
    - Retriever service at `LANGGRAPH_RETRIEVER_API_URL` (default `http://localhost:8001`) — exposes `/retrieve_documents_string` and `/retrieve_documents_list` backed by FAISS.
 3. `app/langgraph_code/wf_api.py` exposes a FastAPI `/run` endpoint which loads the compiled graph at startup and invokes it with the posted question. The handler awaits `graph.ainvoke(payload)` so async nodes can run concurrently.
+
+## LLM-driven retrieval and iterative context
+
+- **LLM decides when to retrieve:** The LLM (via the `AiChatService`) evaluates whether the current retrieved documents and existing context provide enough information to answer the user's question fully. If the model determines additional information is needed, it returns an action that triggers another targeted retrieval from the vectorstore. This enables multi-step retrievals where the LLM asks for focused data rather than returning partial or uncertain answers.
+
+- **Context is maintained and summarized:** Each time the LLM requests another retrieval or generates an answer, it may also produce an updated `context` — a short, summarized string representing aggregated information relevant to the user's multi-part question. The workflow stores and passes this `context` in the shared `OverallState` across iterations.
+
+- **Where to find the context and action:** The final `OverallState` returned by the workflow (the `result` key in the `/run` response) includes fields like `action`, `answer`, `documents`, and `context`. For example, the FastAPI `/run` endpoint returns `{"result": <OverallState dict>}` where `result["context"]` contains the LLM-maintained context and `result["retrieval_counter"]` tracks how many retrieval iterations occurred.
+
+- **Why this helps:** This design keeps retrievals focused (reducing unnecessary vector searches), allows the LLM to iteratively refine queries, and makes the workflow resilient to partial or inconsistent document coverage by explicitly tracking what has already been gathered in `context`.
+
+- **Safety limit on iterations:** To avoid infinite retrieve/answer loops the workflow stops iterative retrieval after a small number of retrievals. The implementation uses `retrieval_counter` in the `OverallState` and the nodes will stop requesting further retrievals after 5 retrieval iterations (the code checks if the counter is greater than 4 and then asks for clarification instead). You can inspect or adjust this behavior in `app/langgraph_code/nodes.py`.
+
+## Environment variables (short)
+
+- `PATH_TO_FAISS_INDEX` - path to FAISS index used by the retriever service.
+- `OPENAI_API_KEY` - optional; required for real OpenAI calls in the LLM service.
+- `LANGGRAPH_LLM_API_URL` (default `http://localhost:8002`) - where the workflow calls the LLM.
+- `LANGGRAPH_RETRIEVER_API_URL` (default `http://localhost:8001`) - where the workflow calls the retriever.
+- `MODEL_NAME_LLM`, `TEMPERATURE_LLM`, `MAX_TOKENS` - LLM tuning variables used by `AiChatService`.
+
+Default service ports used by the examples in this README:
+- Retriever: `8001`
+- LLM: `8002`
+- Workflow (`wf_api`): `8003`
+
+## API reference (minimal)
+
+- **Workflow (LangGraph wrapper)**
+  - `POST /run` - body: `{"question": "...", "k": <int?>}` -> returns `{"result": <OverallState dict>}`. `result` contains fields: `question`, `query`, `k`, `action`, `context`, `answer`, `documents`, `retrieval_counter`.
+  - `GET /health` -> `{"status": "ok"}`
+  - `GET /ready` -> `{"status": <bool>}` (graph loaded at startup)
+
+- **LLM service** (`app/llm/llm_api.py`)
+  - `POST /retrieve_or_respond` - body: `{"question": "..."}` -> returns JSON like `{"action": "retrieve"}` or `{"action": "clarify", "answer": "..."}`.
+  - `POST /generate_answer` - body: `{"question": "...", "documents": "...", "context": "..."}` -> returns either a string answer or a small JSON object (the code attempts to parse JSON-like responses). Tests normalize this value before asserting.
+
+- **Retriever service** (`app/rag/retriever.py`)
+  - `POST /retrieve_documents_string` - body: `{"query": "...", "k": <int?>}` -> returns `{"documents": "<concatenated string>"}` (used by nodes to populate `state['documents']`).
+
+Notes: the LLM output format can be either plain text or a JSON-like object — for deterministic behaviour consider enforcing a JSON schema in the LLM prompt and parsing it in `app/llm/llm_api.py`.
 
 ## Visualization
 
