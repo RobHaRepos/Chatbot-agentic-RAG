@@ -5,3 +5,7 @@ faiss_Hugging_index/
 .env.*
 app/services/.env
 coverage.xml
+__pycache__/
+*.py[cod]
+*.pyc
+.coverage
