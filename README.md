@@ -1,4 +1,4 @@
-[![CI](https://github.com/RobHaRepos/Chatbot-agentic-RAG/actions/workflows/ci-build.yaml/badge.svg)](https://github.com/RobHaRepos/Chatbot-agentic-RAG/actions/workflows/ci-build.yaml) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=RobHaReposChatbotAgenticRag&metric=alert_status&token=4d160f287316ca3bbd8bdcf28b10ea3fcb540329)](https://sonarcloud.io/summary/new_code?id=RobHaReposChatbotAgenticRag) [![Snyk Vulnerabilities](https://snyk.io/test/github/RobHaRepos/Chatbot-agentic-RAG/badge.svg)](https://snyk.io/test/github/RobHaRepos/Chatbot-agentic-RAG) [![Python](https://img.shields.io/badge/python-3.13-blue)](https://www.python.org/) ![Coverage](https://github.com/RobHaRepos/Chatbot-agentic-RAG/blob/a9a8b9919b364f59d6fcb3f19314eb4ce0eed1b5/coverage.svg)
+[![CI](https://github.com/RobHaRepos/Chatbot-agentic-RAG/actions/workflows/ci-build.yaml/badge.svg)](https://github.com/RobHaRepos/Chatbot-agentic-RAG/actions/workflows/ci-build.yaml) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=RobHaReposChatbotAgenticRag&metric=alert_status&token=4d160f287316ca3bbd8bdcf28b10ea3fcb540329)](https://sonarcloud.io/summary/new_code?id=RobHaReposChatbotAgenticRag) [![Snyk Vulnerabilities](https://snyk.io/test/github/RobHaRepos/Chatbot-agentic-RAG/badge.svg)](https://snyk.io/test/github/RobHaRepos/Chatbot-agentic-RAG) [![Python](https://img.shields.io/badge/python-3.13-blue)](https://www.python.org/) ![Coverage](https://raw.githubusercontent.com/RobHaRepos/Chatbot-agentic-RAG/main/coverage.svg)
 
 # Chatbot-agentic-RAG
 
@@ -156,12 +156,10 @@ python -m pytest --cov=app --cov-report=term-missing
 
 This repo includes a pre-commit hook script under `scripts/hooks` that runs `pytest` (with coverage) and then generates `coverage.svg` using `genbadge` when tests pass.
 
-Enable the hooks locally (versioned hooks directory):
+Enable the hooks locally (Windows-only):
 
 ```powershell
-# make the hook executable (on Linux/macOS Git)
-chmod +x scripts/hooks/pre-commit
-# set the repository git hooks path
+# set the repository git hooks path to the versioned hooks directory
 git config core.hooksPath scripts/hooks
 ```
 
@@ -173,6 +171,13 @@ If you get `genbadge: command not found`, install it locally:
 python -m pip install -r requirements.txt
 # or just install the badge tool
 python -m pip install genbadge
+```
+
+If you prefer to keep a single hook file in `scripts/hooks` (recommended when everyone uses Windows), remove the legacy PowerShell script (if it exists):
+
+```powershell
+git rm scripts/hooks/pre-commit.ps1
+git commit -m "remove legacy windows pre-commit.ps1; single hook: scripts/hooks/pre-commit"
 ```
 ```
 
