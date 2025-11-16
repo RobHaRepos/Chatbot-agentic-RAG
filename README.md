@@ -151,6 +151,29 @@ To generate coverage (pytest-cov is available):
 
 ```powershell
 python -m pytest --cov=app --cov-report=term-missing
+
+## Git Hooks (optional, recommended for devs)
+
+This repo includes a pre-commit hook script under `scripts/hooks` that runs `pytest` (with coverage) and then generates `coverage.svg` using `genbadge` when tests pass.
+
+Enable the hooks locally (versioned hooks directory):
+
+```powershell
+# make the hook executable (on Linux/macOS Git)
+chmod +x scripts/hooks/pre-commit
+# set the repository git hooks path
+git config core.hooksPath scripts/hooks
+```
+
+Now `git commit` will run the hook and abort the commit if tests fail; if the tests pass the coverage badge is updated. `coverage.xml` is ignored via `.gitignore` but `coverage.svg` is tracked in the repo so commits will include the updated badge.
+
+If you get `genbadge: command not found`, install it locally:
+
+```powershell
+python -m pip install -r requirements.txt
+# or just install the badge tool
+python -m pip install genbadge
+```
 ```
 
 ## CI / CD
