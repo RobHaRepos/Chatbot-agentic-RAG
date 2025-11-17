@@ -70,6 +70,16 @@ class TestServiceUpRetriever:
         monkeypatch.setattr(requests, "get", _fake_get)
         assert _service_up(url=BASE_URL) is False
 
+def test_retriever_attaches_http_handler():
+    """The retriever process should attach an HTTPLogHandler to its module logger."""
+    import logging
+    logger = logging.getLogger("retriever_service")
+    handlers = [h for h in logger.handlers if h.__class__.__name__ == "HTTPLogHandler"]
+    assert handlers, "retriever_service must attach HTTPLogHandler"
+    h = handlers[0]
+    h._stopped.set()
+    h._worker.join(timeout=1)
+
     
 def test_retrieve_documents_as_string(fake_vector_store):
     """Assert retrieve_documents_as_string returns a non-empty concatenated string."""

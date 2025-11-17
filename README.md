@@ -68,9 +68,11 @@ A small LangGraph-based RAG (Retrieval-Augmented Generation) demo that composes 
 - `MODEL_NAME_LLM`, `TEMPERATURE_LLM`, `MAX_TOKENS` - LLM tuning variables used by `AiChatService`.
 
 Default service ports used by the examples in this README:
-- Retriever: `8001`
-- LLM: `8002`
-- Workflow (`wf_api`): `8003`
+ - Retriever: `8001`
+ - LLM: `8002`
+ - Workflow (`wf_api`): `8000`
+ - Frontend: `8003`
+ - Logger: `8004`
 
 ## API reference (minimal)
 
@@ -123,19 +125,19 @@ $env:OPENAI_API_KEY = "sk-..."
 uvicorn app.llm.llm_api:app --host 0.0.0.0 --port 8002 --reload
 ```
 
-- Workflow FastAPI (the LangGraph wrapper):
+ - Workflow FastAPI (the LangGraph wrapper):
 
 ```powershell
-uvicorn app.langgraph_code.wf_api:app --host 0.0.0.0 --port 8003 --reload
+uvicorn app.langgraph_code.wf_api:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 Open `app/frontend/index.html` (or run simple HTTP server or build container) and point the page to the workflow API.
 
-Alternatively, each microservice contains a `Dockerfile` (and `docker-compose.yml` in `app/llm` and `app/rag`) to run them in containers.
+ Alternatively, each microservice contains a `Dockerfile` (and a repo-level `docker-compose.yml`) to run them in containers; run `docker compose up -d` to start all supported services locally.
 
 ## Running tests
 
-Unit tests are written with pytest. Several tests use monkeypatching to avoid needing a real OpenAI key or FAISS index (see `tests/test_llm.py` which provides an autouse fixture that replaces `AiChatService.build_llm` with a SimpleNamespace fake).
+Unit tests use pytest with monkeypatching to avoid external services. For example `tests/test_llm.py` replaces `AiChatService.build_llm` with a simple fake.
 
 Run tests locally (PowerShell):
 
@@ -216,3 +218,21 @@ Be mindful of: FAISS index volume mounting (the retriever needs access to your F
 - LLM keys: unit tests avoid real OpenAI calls by monkeypatching the LLM builder. For real LLM runs, set `OPENAI_API_KEY` in the environment (or GitHub secrets for CI).
 - Async nodes: the workflow invokes `await graph.ainvoke(payload)` — nodes are async and use httpx.AsyncClient. When testing, provide async-compatible fakes or monkeypatch the network layer.
 - Pytest anyio setting: if you use `anyio_backend` in `pytest.ini` you may prefer to set `ANYIO_BACKEND` via environment for compatibility.
+
+## Logging service (centralized)
+
+The repo includes a small centralized logging service (`app/logger_service`) with a simple API for other services to POST logs and stream them for live tailing.
+
+Key endpoints: `POST /logs`, `GET /logs`, `GET /stream` (SSE), `POST /logs/clear`, and `GET /health`.
+
+Usage notes:
+ - Attach the `HTTPLogHandler` in your own services to forward logs to `LOGGER_SERVICE_URL` (the handler appends `/logs` if required).
+ - The Docker Compose setup includes the `logger_service` service; to run the whole stack: `docker compose up -d`.
+
+Testing:
+ - Unit tests under `tests/` cover the handler and service:
+   ```powershell
+   curl -N http://localhost:8004/stream
+   curl -X POST http://localhost:8004/logs -H "Content-Type: application/json" -d '{"service":"api","level":"INFO","message":"sse test"}'
+   ```
+

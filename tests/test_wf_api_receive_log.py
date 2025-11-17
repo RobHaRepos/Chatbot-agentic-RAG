@@ -28,6 +28,7 @@ def _sha256_hex(b: bytes):
 
 
 def test_receive_log_error_level(monkeypatch):
+    """Posting error level logs routes to logger.error with hashed message metadata."""
     fake = FakeLogger()
     orig_get_logger = logging.getLogger
     monkeypatch.setattr(
@@ -60,6 +61,7 @@ def test_receive_log_error_level(monkeypatch):
 
 
 def test_receive_log_warning_alias(monkeypatch):
+    """Warning alias 'warn' maps to logger.warning and preserves metadata."""
     fake = FakeLogger()
     orig_get_logger = logging.getLogger
     monkeypatch.setattr(
@@ -82,6 +84,7 @@ def test_receive_log_warning_alias(monkeypatch):
 
 
 def test_receive_log_info_and_log_alias(monkeypatch):
+    """Both 'info' and 'log' map to logger.info and include correct metadata."""
     fake = FakeLogger()
     orig_get_logger = logging.getLogger
     monkeypatch.setattr(
@@ -105,6 +108,7 @@ def test_receive_log_info_and_log_alias(monkeypatch):
 
 
 def test_receive_log_unknown_level_uses_debug(monkeypatch):
+    """Unknown level falls back to debug and still records the original level in metadata."""
     fake = FakeLogger()
     orig_get_logger = logging.getLogger
     monkeypatch.setattr(
@@ -127,6 +131,7 @@ def test_receive_log_unknown_level_uses_debug(monkeypatch):
 
 
 def test_receive_log_empty_message(monkeypatch):
+    """An empty message results in zero-length hash and length values."""
     fake = FakeLogger()
     orig_get_logger = logging.getLogger
     monkeypatch.setattr(

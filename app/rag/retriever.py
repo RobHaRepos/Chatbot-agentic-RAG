@@ -1,4 +1,5 @@
 import logging
+from app.logger_service.handlers import HTTPLogHandler
 from langchain_huggingface import HuggingFaceEmbeddings
 from pydantic import BaseModel
 from typing import Optional, List, Any
@@ -9,14 +10,16 @@ from langchain_community.vectorstores import FAISS
 import os
 from pathlib import Path
 
+LOGGER_SERVICE_URL = os.environ.get("LOGGER_SERVICE_URL", "http://localhost:8004")
 
 logger = logging.getLogger("retriever_service")
-if not logger.handlers:
-    handler = logging.StreamHandler()
-    formatter = logging.Formatter("%(asctime)s %(levelname)s %(name)s - %(message)s")
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
-    logger.setLevel(logging.INFO)
+handler = logging.StreamHandler()
+formatter = logging.Formatter("%(asctime)s %(levelname)s %(name)s - %(message)s")
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+remote = HTTPLogHandler(LOGGER_SERVICE_URL)
+logger.addHandler(remote)
+logger.setLevel(logging.INFO)
 
 # environment-driven configurations
 PATH_TO_FAISS_INDEX = os.environ.get("PATH_TO_FAISS_INDEX", str(Path(__file__).resolve().parent.parent.parent / "faiss_Hugging_index"))
