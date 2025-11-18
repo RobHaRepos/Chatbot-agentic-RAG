@@ -41,7 +41,7 @@ an LLM microservice, a FAISS retriever, a minimal frontend, and a central loggin
     - `index.html`, `static/app.js`, CSS and Dockerfile
 - `faiss_Hugging_index/` - expected local FAISS index folder (not committed)
 - `tests/` - pytest test-suite (unit + integration). Tests include monkeypatch fixtures to fake LLM and vectorstore in unit tests.
-- `scripts/hooks/` - repo-level pre-commit hooks (Windows PowerShell version included)
+ 
 - `docker-compose.yml` - top-level compose that wires service envs (e.g., `LOGGER_SERVICE_URL` and `SERVICE_NAME`) and healthchecks
 - `.github/workflows/ci-build.yaml` - CI workflow that installs deps, runs ruff and pytest
 - `requirements.txt` - pinned Python dependencies (per-service requirement files are in each microservice folder: `requirements-llm.txt`, `requirements-retriever.txt`, `requirements-log.txt`, `requirements-lg.txt`)
@@ -106,35 +106,9 @@ The LangGraph workflow visualization is rendered to `out/stategraph.png` and sho
 
 Unit tests use pytest (+ coverage) with monkeypatching to avoid external services. For example `tests/test_llm.py` replaces `AiChatService.build_llm` with a simple fake.
 
-## Git Hooks (optional, recommended for devs)
-
-This repo includes a pre-commit hook script under `scripts/hooks` that runs `pytest` (with coverage) and then generates `coverage.svg` using `genbadge` when tests pass.
-
-Before enabling hooks: the repo includes an installer that will remove existing repository pre-commit hooks in `.git/hooks` so you can switch to versioned hooks safely.
-
-Enable the hooks locally (Windows-only):
-
-```powershell
-# set the repository git hooks path to the versioned hooks directory
-git config core.hooksPath scripts/hooks
-```
-
-Alternatively on Windows you can run the installer script that removes existing
-pre-commit hooks and sets the hooks path:
-
-```powershell
-scripts\hooks\install-hooks.ps1
-```
-
-Now `git commit` will run the hook and abort the commit if tests fail; if the tests pass the coverage badge is updated. `coverage.xml` is ignored via `.gitignore` but `coverage.svg` is tracked in the repo so commits will include the updated badge.
-
-If you get `genbadge: command not found`, install it locally:
-
-```powershell
-python -m pip install -r requirements.txt
-# or just install the badge tool
-python -m pip install genbadge
-```
+<!-- Repo no longer uses pre-commit hooks. To reintroduce them, add your
+  versioned hooks under `scripts/hooks/` and optionally run an installer to
+  configure `core.hooksPath`. -->
 
 ## CI / CD
 

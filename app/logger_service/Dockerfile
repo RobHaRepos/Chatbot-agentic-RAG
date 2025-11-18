@@ -11,7 +11,6 @@ COPY app/logger_service/requirements-log.txt /app/requirements-log.txt
 RUN python -m pip install --upgrade pip setuptools wheel \
     && pip install --no-cache-dir -r requirements-log.txt
 
-ENV PYTHONUNBUFFERED=1
 COPY app /app/app
 EXPOSE 8004
 
@@ -19,6 +18,8 @@ EXPOSE 8004
 RUN groupadd -g 1000 appuser \
     && useradd -u 1000 -g appuser -m -d /home/appuser -s /bin/sh appuser \
     && chown -R appuser:appuser /app
+
+ENV HOME=/home/appuser PYTHONUNBUFFERED=1
 
 CMD ["python", "-m", "uvicorn", "app.logger_service.logger_service:app", "--host", "0.0.0.0", "--port", "8004"]
 
