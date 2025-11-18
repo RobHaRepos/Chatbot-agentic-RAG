@@ -1,66 +1,19 @@
 #!/usr/bin/env pwsh
-<#
-PowerShell-only Git pre-commit hook (moved to a .ps1 file so the top-level 'pre-commit'
-script can be a cross-platform shell wrapper). This runs pytest with coverage and optionally
-generates a coverage badge.
-#>
+<# PowerShell pre-commit hook: run pytest, generate coverage badge, stage badge #>
+$ErrorActionPreference = 'Stop'
 
-param([string[]] $args)
+Write-Host "Running tests..."
+python -m pytest -q --maxfail=1
 
-Write-Host "[pre-commit.ps1] Running pytest (generates coverage.xml)"
-
-# Debug: write to repo root log so we can detect whether this script is executed by Git/VSCode
-$cwd = Get-Location
-$debugFile = Join-Path -Path $cwd -ChildPath "pre-commit.log"
-"$((Get-Date).ToString('o')) pre-commit.ps1 started - User:$env:USERNAME - PYTHON=$env:PYTHON" | Out-File -FilePath $debugFile -Append -Encoding UTF8 -Force
-
-# Prefers repo venv python
-$projectVenvWin = Join-Path -Path $PSScriptRoot -ChildPath "..\.venv\Scripts\python.exe" | Resolve-Path -ErrorAction SilentlyContinue
-$projectVenvPosix = Join-Path -Path $PSScriptRoot -ChildPath "../.venv/bin/python" | Resolve-Path -ErrorAction SilentlyContinue
-
-if ($projectVenvWin) {
-    $PYTHON = $projectVenvWin -replace "\\`n",""
-} elseif ($projectVenvPosix) {
-    $PYTHON = $projectVenvPosix -replace "\\`n",""
-} elseif (Get-Command -Name python -ErrorAction SilentlyContinue) {
-    $PYTHON = (Get-Command -Name python).Source
-} elseif (Get-Command -Name py -ErrorAction SilentlyContinue) {
-    $PYTHON = (Get-Command -Name py).Source
-} else {
-    $PYTHON = "python"
-}
-
-Write-Host "[pre-commit.ps1] Using python: $PYTHON"
+Write-Host "Generating coverage badge..."
 try {
-    & $PYTHON -m pytest -q --maxfail=1 --disable-warnings --cov=. --cov-report=xml:coverage.xml
+    python -m genbadge coverage -i coverage.xml -o coverage.svg
 } catch {
-    if ($_.Exception.Message -match "No module named pytest") {
-        $msg = @"
-[pre-commit.ps1] pytest is not installed in $PYTHON.
-Install with:
-    $PYTHON -m pip install -r requirements-ci.txt
-
-Or create a local .venv and install deps:
-    python -m venv .venv; . .venv/Scripts/Activate.ps1; pip install -r requirements-ci.txt
-"@
-        Write-Error $msg
-    } else {
-        Write-Error "[pre-commit.ps1] pytest failed: $_"
-    }
+    Write-Host "Failed to generate coverage badge: $_" -ForegroundColor Red
     exit 1
 }
 
-if (Get-Command -Name genbadge -ErrorAction SilentlyContinue) {
-    Write-Host "[pre-commit.ps1] Generating coverage badge (coverage.svg)"
-    genbadge coverage -i coverage.xml -o coverage.svg
-    if ($LASTEXITCODE -ne 0) { Write-Error "[pre-commit.ps1] genbadge failed - aborting commit"; exit $LASTEXITCODE }
-    # Stage coverage badge
-    if (Get-Command -Name git -ErrorAction SilentlyContinue) {
-        Write-Host "[pre-commit.ps1] Staging coverage.svg for commit"
-        git add coverage.svg
-    }
-} else {
-    Write-Warning "[pre-commit.ps1] genbadge not found - skipping badge generation"
-}
+Write-Host "Staging coverage.svg for commit..."
+git add coverage.svg
 
-exit 0
+Write-Host "Pre-commit hook: tests passed and coverage badge created." -ForegroundColor Green

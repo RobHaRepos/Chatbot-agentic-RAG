@@ -110,11 +110,20 @@ Unit tests use pytest (+ coverage) with monkeypatching to avoid external service
 
 This repo includes a pre-commit hook script under `scripts/hooks` that runs `pytest` (with coverage) and then generates `coverage.svg` using `genbadge` when tests pass.
 
+Before enabling hooks: the repo includes an installer that will remove existing repository pre-commit hooks in `.git/hooks` so you can switch to versioned hooks safely.
+
 Enable the hooks locally (Windows-only):
 
 ```powershell
 # set the repository git hooks path to the versioned hooks directory
 git config core.hooksPath scripts/hooks
+```
+
+Alternatively on Windows you can run the installer script that removes existing
+pre-commit hooks and sets the hooks path:
+
+```powershell
+scripts\hooks\install-hooks.ps1
 ```
 
 Now `git commit` will run the hook and abort the commit if tests fail; if the tests pass the coverage badge is updated. `coverage.xml` is ignored via `.gitignore` but `coverage.svg` is tracked in the repo so commits will include the updated badge.
