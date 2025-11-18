@@ -32,6 +32,7 @@ def generate_actions(user_input:str):
     return action, content
 
 def test_parameters_llm():
+    """Validate AiChatService parameters are set correctly after initialization."""
     service = AiChatService(model_class=ChatOpenAI, model_name=MODEL_NAME_LLM, api_key=API_KEY_LLM, max_tokens=MAX_TOKENS, temperature=TEMPERATURE_LLM)
     assert service.model_name == MODEL_NAME_LLM
     assert service.max_tokens == MAX_TOKENS
@@ -39,6 +40,7 @@ def test_parameters_llm():
 
 @pytest.mark.usefixtures("patch_build_llm")
 def test_generate_simple_response():    
+    """LLM generate returns a valid string content using prompt."""
     service = AiChatService(
         model_class=ChatOpenAI, 
         model_name=MODEL_NAME_LLM, 
@@ -59,6 +61,7 @@ def test_generate_simple_response():
 
 @pytest.mark.usefixtures("patch_build_llm")
 def test_extract_llm_response_content_happy():    
+    """extract_llm_response_content returns content string when LLM responds with content."""
     class FakeLLM:
         def invoke(self, messages):
             return SimpleNamespace(content="The newest Iphone is Iphone 15.")
@@ -76,6 +79,7 @@ def test_extract_llm_response_content_happy():
 
 @pytest.mark.usefixtures("patch_build_llm")
 def test_extract_llm_response_content_sad(monkeypatch):
+    """extract_llm_response_content raises TypeError when prompt returns no messages."""
     class FakeLLM:
         def invoke(self, messages):
             return SimpleNamespace(content="This is a response.")
@@ -96,6 +100,7 @@ def test_extract_llm_response_content_sad(monkeypatch):
 
 @pytest.mark.usefixtures("patch_build_llm")
 def test_generate_action_retrieve(monkeypatch):
+    """retrieve_or_respond returns retrieve action when appropriate."""
     monkeypatch.setattr(AiChatService, "retrieve_or_respond", lambda self, user_input: {"action": "retrieve", "answer": ""})
     action, content = generate_actions(user_input="What is the newest Iphone?", )
     print(f"Action: {action}, Content: {content}")
@@ -104,6 +109,7 @@ def test_generate_action_retrieve(monkeypatch):
     
 @pytest.mark.usefixtures("patch_build_llm")
 def test_generate_action_clarify(monkeypatch):
+    """retrieve_or_respond returns clarify action for unrelated questions."""
     monkeypatch.setattr(AiChatService, "retrieve_or_respond", lambda self, user_input: {"action": "clarify", "answer": ""})
     action, content = generate_actions(user_input="What is the capital of France?", )
     print(f"Action: {action}, Content: {content}")
@@ -112,6 +118,7 @@ def test_generate_action_clarify(monkeypatch):
 
 @pytest.mark.usefixtures("patch_build_llm")
 def test_retrieve_or_respond_fallback(monkeypatch):
+    """Fallback behavior returns clarify when LLM gives non-JSON response."""
     monkeypatch.setattr(AiChatService, "build_llm",
                         lambda self, *a, **k: SimpleNamespace(invoke=lambda messages: SimpleNamespace(content="Non-JSON response")))
 
@@ -137,7 +144,7 @@ class TestGenerateAnswer:
             )
 
     def test_generate_answer(self):
-        """Test generate_answer with normal input."""
+        """generate_answer returns a string answer containing expected text."""
         answer = self.service.generate_answer(
             user_input="What is the newest Iphone?", 
             retrieved_information="Iphone 16 MAX, \
@@ -150,7 +157,7 @@ class TestGenerateAnswer:
         assert "Iphone 16".lower() in answer.lower()
         
     def test_generate_retrieve(self):
-        """Test generate_answer leading to retrieve action."""
+        """generate_answer returns a retrieve JSON when retrieval needed."""
 
         answer = self.service.generate_answer(
             user_input="What is the newest Iphone?", 

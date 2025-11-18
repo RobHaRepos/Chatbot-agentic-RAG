@@ -1,9 +1,12 @@
 from types import SimpleNamespace
 import requests
 import pytest
-
+import logging
 import app.rag.retriever as retriever_module
 from app.rag.retriever import SearchRequest
+
+from app.logger_service.handlers import HTTPLogHandler as _HTTPLogHandler
+from typing import cast
 
 BASE_URL = "http://localhost:8001"
 PAYLOAD = {
@@ -69,6 +72,18 @@ class TestServiceUpRetriever:
 
         monkeypatch.setattr(requests, "get", _fake_get)
         assert _service_up(url=BASE_URL) is False
+
+def test_retriever_attaches_http_handler():
+    """The retriever process should attach an HTTPLogHandler to its module logger."""
+    logger = logging.getLogger("retriever_service")
+    handlers = [h for h in logger.handlers if h.__class__.__name__ == "HTTPLogHandler"]
+    assert handlers, "retriever_service must attach HTTPLogHandler"
+
+    h = cast(_HTTPLogHandler, handlers[0])
+    if hasattr(h, "_stopped"):
+        getattr(h, "_stopped").set()
+    if hasattr(h, "_worker"):
+        getattr(h, "_worker").join(timeout=1)
 
     
 def test_retrieve_documents_as_string(fake_vector_store):

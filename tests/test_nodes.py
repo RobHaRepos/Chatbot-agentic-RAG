@@ -1,6 +1,8 @@
 import pytest
+from app.logger_service.handlers import HTTPLogHandler as _HTTPLogHandler
 from anyio import lowlevel
 from typing import cast, Any
+import logging
 from app.langgraph_code.workflow import OverallState
 from app.langgraph_code.nodes import (
     node_retrieve_string,
@@ -52,6 +54,7 @@ class FakeAsyncClient:
 
 @pytest.mark.anyio
 async def test_node_retrieve_string(monkeypatch, state_factory):
+    """node_retrieve_string fetches and returns documents text from retriever service."""
     fake_response = FakeResponse({"documents": "DOC_A\n\nDOC_B"})
     
     fake_client = FakeAsyncClient(fake_response)
@@ -73,6 +76,7 @@ async def test_node_retrieve_string(monkeypatch, state_factory):
         
 @pytest.mark.anyio
 async def test_node_retrieve_or_respond_retrieve(monkeypatch, state_factory):
+    """retrieve_or_respond returns retrieve action when LLM indicates retrieval is needed."""
     fake_response_retrieve = FakeResponse({"action": "retrieve", "answer": ""})
     fake_client = FakeAsyncClient(fake_response_retrieve)
     monkeypatch.setattr("app.langgraph_code.nodes.httpx.AsyncClient", lambda *args, **kwargs: fake_client)
@@ -89,6 +93,7 @@ async def test_node_retrieve_or_respond_retrieve(monkeypatch, state_factory):
 
 @pytest.mark.anyio
 async def test_node_retrieve_or_respond_clarify(monkeypatch, state_factory):
+    """retrieve_or_respond returns clarify action on empty/insufficient question."""
     fake_response_clarify = FakeResponse({"action": "clarify", "answer": ""})
     fake_client = FakeAsyncClient(fake_response_clarify)
     monkeypatch.setattr("app.langgraph_code.nodes.httpx.AsyncClient", lambda *args, **kwargs: fake_client)
@@ -104,6 +109,7 @@ async def test_node_retrieve_or_respond_clarify(monkeypatch, state_factory):
     
 @pytest.mark.anyio
 async def test_node_retrieve_or_respond_fallback(monkeypatch, state_factory):
+    """retrieve_or_respond falls back to clarify when the LLM returns non-JSON."""
     fake_response_fallback = FakeResponse("Non-JSON response")
     fake_client = FakeAsyncClient(fake_response_fallback)
     monkeypatch.setattr("app.langgraph_code.nodes.httpx.AsyncClient", lambda *args, **kwargs: fake_client)
@@ -191,3 +197,19 @@ def test_node_ask_clarify(state_factory):
     assert "The query seems to be unrelated to phones. Could you be more specific? Which phone model or what detail do you mean (brand/model/specs/price)?" in result["answer"]
     assert "action" in result
     assert "clarify" in result["action"]
+
+
+def test_nodes_attach_http_handler():
+    """Loggers used by nodes should attach HTTPLogHandler so they forward to central logger."""
+    logger = logging.getLogger("langgraph_nodes")
+    handlers = [h for h in logger.handlers if h.__class__.__name__ == "HTTPLogHandler"]
+    assert handlers, "langgraph_nodes must attach HTTPLogHandler"
+
+    h = cast(_HTTPLogHandler, handlers[0])
+    try:
+        if hasattr(h, "_stopped"):
+            getattr(h, "_stopped").set()
+        if hasattr(h, "_worker"):
+            getattr(h, "_worker").join(timeout=1)
+    except Exception:
+        pass

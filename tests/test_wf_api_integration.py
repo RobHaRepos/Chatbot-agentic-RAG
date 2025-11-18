@@ -7,6 +7,7 @@ from tests.test_retriever import _service_up
 @pytest.mark.skipif(not _service_up(url=os.environ.get("RETRIEVER_SERVICE_URL", "http://localhost:8001")), reason="Retriever service is not running")
 @pytest.mark.integration
 def test_wf_api_run_workflow_happy():
+    """Integration test: run workflow end-to-end when services are available."""
     with TestClient(app) as client:
         while True:
             r = client.get("/ready")
@@ -28,6 +29,7 @@ def test_wf_api_run_workflow_happy():
 @pytest.mark.skipif(not _service_up(url=os.environ.get("RETRIEVER_SERVICE_URL", "http://localhost:8001")), reason="Retriever service is not running")
 @pytest.mark.integration
 def test_wf_api_run_workflow_multiple_retrieves():
+    """Integration: multiple retrievals and answer contains expected keywords."""
     with TestClient(app) as client:
         while True:
             r = client.get("/ready")
@@ -47,6 +49,7 @@ def test_wf_api_run_workflow_multiple_retrieves():
 @pytest.mark.skipif(not _service_up(url=os.environ.get("RETRIEVER_SERVICE_URL", "http://localhost:8001")), reason="Retriever service is not running")
 @pytest.mark.integration
 def test_run_workflow_no_question():
+    """Integration: empty question returns clarify action with a suggestion message."""
     with TestClient(app) as client:
         while True:
             r = client.get("/ready")

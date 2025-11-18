@@ -4,18 +4,21 @@ import logging
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from typing import Any, Dict
+from app.logger_service.handlers import HTTPLogHandler
 
 MODEL_NAME_LLM = os.environ.get("MODEL_NAME_LLM", "gpt-4.1-mini")
 TEMPERATURE_LLM = float(os.environ.get("TEMPERATURE_LLM", 0.0))
 MAX_TOKENS = int(os.environ.get("MAX_TOKENS", 400))
+LOGGER_SERVICE_URL = os.environ.get("LOGGER_SERVICE_URL", "http://localhost:8004")
 
 logger = logging.getLogger("llm_service")
-if not logger.handlers:
-    handler = logging.StreamHandler()
-    formatter = logging.Formatter("%(asctime)s %(levelname)s %(name)s - %(message)s")
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
-    logger.setLevel(logging.INFO)
+handler = logging.StreamHandler()
+formatter = logging.Formatter("%(asctime)s %(levelname)s %(name)s - %(message)s")
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+remote = HTTPLogHandler(LOGGER_SERVICE_URL)
+logger.addHandler(remote)
+logger.setLevel(logging.INFO)
 
 class AiChatService:
     def __init__(self, model_class, model_name: str, api_key: str | None, max_tokens:int, temperature: float):

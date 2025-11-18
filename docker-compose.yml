@@ -1,4 +1,21 @@
 services:
+  logger_service:
+    build:
+      context: .
+      dockerfile: app/logger_service/Dockerfile
+    image: "${LOGGER_IMAGE:-chatbot_logger:latest}"
+    ports:
+      - "8004:8004"
+    environment:
+      LOGGER_SERVICE_URL: "http://localhost:8004"
+      SERVICE_NAME: "logger_service"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8004/health || exit 1"]
+      interval: 55s
+      timeout: 5s
+      retries: 6
+    restart: unless-stopped
+
   retriever:
     build:
       context: .
@@ -12,12 +29,16 @@ services:
       PATH_TO_FAISS_INDEX: /data/faiss_index
       MODEL_NAME_EMBEDDING: "sentence-transformers/all-MiniLM-L6-v2"
       NUMBER_OF_DOCUMENTS_TO_RETRIEVE: 10
+      LOGGER_SERVICE_URL: "http://logger_service:8004"
+      SERVICE_NAME: "retriever"
+    depends_on:
+      - logger_service
     volumes:
       - ./faiss_Hugging_index:/data/faiss_index:ro
       - hf_cache:/root/.cache/huggingface
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8001/health || exit 1"]
-      interval: 10s
+      interval: 55s
       timeout: 5s
       retries: 6
     restart: unless-stopped
@@ -36,9 +57,13 @@ services:
       OPENAI_API_KEY: "${OPENAI_API_KEY}"
       MAX_TOKENS: "${MAX_TOKENS:-400}"
       TEMPERATURE_LLM: "${TEMPERATURE_LLM:-0.0}"
+      LOGGER_SERVICE_URL: "http://logger_service:8004"
+      SERVICE_NAME: "llm"
+    depends_on:
+      - logger_service
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8002/health || exit 1"]
-      interval: 10s
+      interval: 55s
       timeout: 5s
       retries: 6
     restart: unless-stopped
@@ -54,13 +79,16 @@ services:
     environment:
       LANGGRAPH_RETRIEVER_API_URL: "http://retriever:8001"
       LANGGRAPH_LLM_API_URL: "http://llm:8002"
+      LOGGER_SERVICE_URL: "http://logger_service:8004"
       MAX_RETRIEVES: "${MAX_RETRIEVES:-4}"
+      SERVICE_NAME: "langgraph"
     depends_on:
       - retriever
       - llm
+      - logger_service
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:8000/health || exit 1"]
-      interval: 10s
+      interval: 55s
       timeout: 5s
       retries: 6
     restart: unless-stopped
@@ -74,11 +102,14 @@ services:
       - "8003:80"
     environment:
       LANGGRAPH_API_URL: "http://localhost:8000/run"
+      LOGGER_SERVICE_URL: "http://logger_service:8004"
+      SERVICE_NAME: "frontend"
     depends_on:
       - langgraph
+      - logger_service
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost/.well-known/health.json || exit 1"]
-      interval: 10s
+      interval: 55s
       timeout: 5s
       retries: 6
     restart: unless-stopped

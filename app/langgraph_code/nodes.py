@@ -2,6 +2,7 @@ import os
 import logging
 import httpx
 from typing import Dict, Any, TYPE_CHECKING
+from app.logger_service.handlers import HTTPLogHandler
 
 if TYPE_CHECKING:
     from .workflow import OverallState
@@ -9,14 +10,16 @@ if TYPE_CHECKING:
 LLM_API_URL = os.environ.get("LANGGRAPH_LLM_API_URL", "http://localhost:8002")
 RETRIEVER_API_URL = os.environ.get("LANGGRAPH_RETRIEVER_API_URL", "http://localhost:8001")
 MAX_RETRIEVES = int(os.environ.get("MAX_RETRIEVES", 4))
+LOGGER_SERVICE_URL = os.environ.get("LOGGER_SERVICE_URL", "http://localhost:8004")
 
 logger = logging.getLogger("langgraph_nodes")
-if not logger.handlers:
-    handler = logging.StreamHandler()
-    formatter = logging.Formatter("%(asctime)s %(levelname)s %(name)s - %(message)s")
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
-    logger.setLevel(logging.INFO)
+handler = logging.StreamHandler()
+formatter = logging.Formatter("%(asctime)s %(levelname)s %(name)s - %(message)s")
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+remote = HTTPLogHandler(LOGGER_SERVICE_URL)
+logger.addHandler(remote)
+logger.setLevel(logging.INFO)
 
 
 async def node_retrieve_string(state: "OverallState") -> Dict[str, Any]:
