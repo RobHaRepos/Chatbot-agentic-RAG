@@ -34,9 +34,7 @@ class DocumentsResponse(BaseModel):
     documents: List[Any]
 
 def load_faiss_index(path: str, embeddings, allow_dangerous_deserialization: bool = True):
-    """
-    Wrapper so tests that import app.rag.retriever can call load_faiss_index.
-    """
+    """Wrapper so tests that import app.rag.retriever can call load_faiss_index."""
     logger.info("load_faiss_index: loading FAISS index from path=%s", path)
     return FAISS.load_local(path, embeddings, allow_dangerous_deserialization=allow_dangerous_deserialization)
 

@@ -7,7 +7,6 @@ from app.llm.llm import AiChatService
 from contextlib import asynccontextmanager
 import logging
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("llm_service")
 
 MODEL_NAME_LLM = os.environ.get("MODEL_NAME_LLM", "gpt-4.1-mini")

@@ -1,6 +1,8 @@
 import pytest
+from app.logger_service.handlers import HTTPLogHandler as _HTTPLogHandler
 from anyio import lowlevel
 from typing import cast, Any
+import logging
 from app.langgraph_code.workflow import OverallState
 from app.langgraph_code.nodes import (
     node_retrieve_string,
@@ -199,13 +201,15 @@ def test_node_ask_clarify(state_factory):
 
 def test_nodes_attach_http_handler():
     """Loggers used by nodes should attach HTTPLogHandler so they forward to central logger."""
-    import logging
     logger = logging.getLogger("langgraph_nodes")
     handlers = [h for h in logger.handlers if h.__class__.__name__ == "HTTPLogHandler"]
     assert handlers, "langgraph_nodes must attach HTTPLogHandler"
-    h = handlers[0]
+
+    h = cast(_HTTPLogHandler, handlers[0])
     try:
-        h._stopped.set()
-        h._worker.join(timeout=1)
+        if hasattr(h, "_stopped"):
+            getattr(h, "_stopped").set()
+        if hasattr(h, "_worker"):
+            getattr(h, "_worker").join(timeout=1)
     except Exception:
         pass
