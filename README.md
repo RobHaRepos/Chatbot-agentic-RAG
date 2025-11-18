@@ -106,10 +106,6 @@ The LangGraph workflow visualization is rendered to `out/stategraph.png` and sho
 
 Unit tests use pytest (+ coverage) with monkeypatching to avoid external services. For example `tests/test_llm.py` replaces `AiChatService.build_llm` with a simple fake.
 
-<!-- Repo no longer uses pre-commit hooks. To reintroduce them, add your
-  versioned hooks under `scripts/hooks/` and optionally run an installer to
-  configure `core.hooksPath`. -->
-
 ## CI / CD
 
 This repository includes a GitHub Actions workflow at `.github/workflows/ci-build.yaml` that:
@@ -132,6 +128,11 @@ This repo leverages external scanning-as-a-service for testing and reporting dur
 ## Dockerization / Containers
 
 Per-service Dockerfiles are located in `app/llm/`, `app/rag/`, `app/frontend/` and `app/logger_service/` (central logger).
+
+Security and runtime notes:
+
+- Each service runs as a non-root `appuser` user when the container starts to reduce exposure to privilege escalation in the container runtime.
+- Build-only packages (e.g., `build-essential`, `cmake`) are removed after Python dependencies are installed in the Dockerfiles to minimize the image footprint and surface area.
 
 A simple approach to run everything locally with containers (recommended):
 

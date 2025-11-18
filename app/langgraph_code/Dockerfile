@@ -8,7 +8,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY app/langgraph_code/requirements-lg.txt /app/requirements-lg.txt
 RUN python -m pip install --upgrade pip setuptools wheel \
-    && pip install --no-cache-dir -r requirements-lg.txt
+    && pip install --no-cache-dir -r requirements-lg.txt \
+    && apt-get purge -y --auto-remove build-essential \
+    && rm -rf /var/lib/apt/lists/* \
+    || true
 
 COPY app /app/app
 ENV PORT=8000 \

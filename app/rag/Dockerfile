@@ -7,7 +7,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY app/rag/requirements-retriever.txt /app/requirements-retriever.txt
 RUN pip install --upgrade pip setuptools wheel \
-    && pip install --no-cache-dir -r requirements-retriever.txt
+    && pip install --no-cache-dir -r requirements-retriever.txt \
+    && apt-get purge -y --auto-remove build-essential cmake git \
+    && rm -rf /var/lib/apt/lists/* \
+    || true
+
+## Create non-root runtime user
+RUN groupadd -g 1000 appuser \
+    && useradd -u 1000 -g appuser -m -d /home/appuser -s /bin/sh appuser \
+    && chown -R appuser:appuser /app
+
+ENV HOME=/home/appuser PYTHONUNBUFFERED=1
+USER appuser
 
 COPY app /app/app
 ENV PORT=8001
