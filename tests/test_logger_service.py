@@ -1,5 +1,7 @@
 from app.logger_service import logger_service
 from fastapi.testclient import TestClient
+import importlib
+import logging
 
 client = TestClient(logger_service.app)
 
@@ -81,14 +83,7 @@ def test_emit_to_local_logger_numeric_level(caplog):
 
 def test_logger_module_setup(monkeypatch):
     """Reloading module triggers logger setup branch when no handlers present."""
-    import importlib
-    import logging
 
-    # Replace getLogger to return a logger with empty handlers so the
-    # module-level setup branch executes when reloaded.
-    # create a brand new Logger instance (no handlers) and return it for the
-    # logger name used by the module; this ensures the module-level branch
-    # that configures the handler is executed on reload.
     fake_logger = logging.Logger("logger_service")
     monkeypatch.setattr(logging, "getLogger", lambda name=None: fake_logger)
 

@@ -21,6 +21,10 @@ LOGS = deque(maxlen=10000)
 
 _subscribers: List[asyncio.Queue] = []
 
+# Keep a reference to pending background tasks so they're not garbage collected
+# while running and allow us to cleanup finished tasks.
+_pending_tasks: List[asyncio.Task] = []
+
 class LogPayload(BaseModel):
     service: str = Field(..., description="Service name (e.g., api, llm, retriever)")
     logger: Optional[str] = Field(None, description="Loger name (e.g., module or component)")
@@ -65,7 +69,16 @@ async def post_log(payload: LogPayload):
     record = _to_log_record(payload)
     LOGS.append(record)
     _emit_to_local_logger(record)
-    asyncio.create_task(_publish(record))
+    task = asyncio.create_task(_publish(record))
+    _pending_tasks.append(task)
+
+    def _on_task_done(t: asyncio.Task):
+        try:
+            _pending_tasks.remove(t)
+        except ValueError:
+            pass
+
+    task.add_done_callback(_on_task_done)
     return JSONResponse(content={"status": "ok"}, status_code=201)
 
 @app.get("/logs")

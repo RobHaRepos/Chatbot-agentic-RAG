@@ -14,5 +14,11 @@ RUN python -m pip install --upgrade pip setuptools wheel \
 ENV PYTHONUNBUFFERED=1
 COPY app /app/app
 EXPOSE 8004
+
+# switch to a non-root, unprivileged user for runtime.
+RUN groupadd -g 1000 appuser \
+    && useradd -u 1000 -g appuser -m -d /home/appuser -s /bin/sh appuser \
+    && chown -R appuser:appuser /app
+
 CMD ["python", "-m", "uvicorn", "app.logger_service.logger_service:app", "--host", "0.0.0.0", "--port", "8004"]
 
