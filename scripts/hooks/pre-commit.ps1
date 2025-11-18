@@ -9,6 +9,13 @@ param([string[]] $args)
 
 Write-Host "[pre-commit.ps1] Running pytest (generates coverage.xml)"
 
+# Debug: write to repo root log so we can detect whether this script is executed by Git/VSCode
+$repoRoot = Resolve-Path -Path "$PSScriptRoot\.." -ErrorAction SilentlyContinue
+if ($repoRoot) {
+    $debugFile = Join-Path -Path $repoRoot -ChildPath "pre-commit.log"
+    "$((Get-Date).ToString('o')) pre-commit.ps1 started - User:$env:USERNAME - PYTHON=$env:PYTHON" | Out-File -FilePath $debugFile -Append -Encoding UTF8 -Force
+}
+
 # Prefers repo venv python
 $projectVenvWin = Join-Path -Path $PSScriptRoot -ChildPath "..\.venv\Scripts\python.exe" | Resolve-Path -ErrorAction SilentlyContinue
 $projectVenvPosix = Join-Path -Path $PSScriptRoot -ChildPath "../.venv/bin/python" | Resolve-Path -ErrorAction SilentlyContinue
