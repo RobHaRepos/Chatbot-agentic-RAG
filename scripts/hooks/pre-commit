@@ -1,4 +1,25 @@
-#!/usr/bin/env powershell
+#!/usr/bin/env sh
+# Cross-platform pre-commit hook wrapper
+# Calls PowerShell hook when available, otherwise uses python directly.
+HOOKDIR=$(dirname "$0")
+PWSH=$(command -v pwsh || true)
+POWERSHELL=$(command -v powershell || true)
+if [ -n "$PWSH" ]; then
+    exec "$PWSH" -NoProfile -ExecutionPolicy Bypass -File "$HOOKDIR/pre-commit.ps1" "$@"
+elif [ -n "$POWERSHELL" ]; then
+    exec "$POWERSHELL" -NoProfile -ExecutionPolicy Bypass -File "$HOOKDIR/pre-commit.ps1" "$@"
+else
+    # Fallback: use python in .venv if present or python from PATH
+    if [ -x "$HOOKDIR/../.venv/bin/python" ]; then
+        PYTHON="$HOOKDIR/../.venv/bin/python"
+    elif command -v py >/dev/null 2>&1; then
+        PYTHON="py -3"
+    else
+        PYTHON="python"
+    fi
+    echo "[pre-commit] Using PYTHON=$PYTHON"
+    exec $PYTHON -m pytest -q --maxfail=1 --disable-warnings --cov=. --cov-report=xml:coverage.xml
+fi
 <#
 PowerShell-only Git pre-commit hook. Designed for Windows users.
 - Runs pytest with coverage to generate coverage.xml
@@ -8,10 +29,10 @@ PowerShell-only Git pre-commit hook. Designed for Windows users.
 Write-Host "[pre-commit] Running pytest (generates coverage.xml)"
 
 # Debug log — write a short entry so it's obvious the hook started even when an editor is involved
-$logFile = Join-Path -Path $PSScriptRoot -ChildPath "pre-commit.log"
+$logFile = Join-Path -Path (Resolve-Path -Path "$PSScriptRoot\.." -ErrorAction SilentlyContinue) -ChildPath "pre-commit.log"
 try {
-    Add-Content -Path $logFile -Value "`n===== pre-commit hook started: $(Get-Date -Format o) - PID:$PID - User:$env:USERNAME" -ErrorAction SilentlyContinue
-    Add-Content -Path $logFile -Value "GIT_EDITOR=$(git var GIT_EDITOR) core.hooksPath=$(git config --get core.hooksPath)" -ErrorAction SilentlyContinue
+    "===== pre-commit hook started: $(Get-Date -Format o) - PID:$PID - User:$env:USERNAME" | Out-File -FilePath $logFile -Append -Encoding UTF8 -Force
+    "GIT_EDITOR=$(git var GIT_EDITOR) core.hooksPath=$(git config --get core.hooksPath)" | Out-File -FilePath $logFile -Append -Encoding UTF8 -Force
 } catch {
     Write-Warning "[pre-commit] unable to write to ${logFile}: ${_}"
 }
