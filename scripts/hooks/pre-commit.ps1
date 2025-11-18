@@ -26,8 +26,24 @@ if ($projectVenvWin) {
 }
 
 Write-Host "[pre-commit.ps1] Using python: $PYTHON"
-try { & $PYTHON -m pytest -q --maxfail=1 --disable-warnings --cov=. --cov-report=xml:coverage.xml }
-catch { Write-Error "[pre-commit.ps1] pytest failed: $_"; exit 1 }
+try {
+    & $PYTHON -m pytest -q --maxfail=1 --disable-warnings --cov=. --cov-report=xml:coverage.xml
+} catch {
+    if ($_.Exception.Message -match "No module named pytest") {
+        $msg = @"
+[pre-commit.ps1] pytest is not installed in $PYTHON.
+Install with:
+    $PYTHON -m pip install -r requirements-ci.txt
+
+Or create a local .venv and install deps:
+    python -m venv .venv; . .venv/Scripts/Activate.ps1; pip install -r requirements-ci.txt
+"@
+        Write-Error $msg
+    } else {
+        Write-Error "[pre-commit.ps1] pytest failed: $_"
+    }
+    exit 1
+}
 
 if (Get-Command -Name genbadge -ErrorAction SilentlyContinue) {
     Write-Host "[pre-commit.ps1] Generating coverage badge (coverage.svg)"
