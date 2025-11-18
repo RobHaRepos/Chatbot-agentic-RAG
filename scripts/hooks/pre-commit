@@ -6,7 +6,47 @@ PowerShell-only Git pre-commit hook. Designed for Windows users.
 #>
 
 Write-Host "[pre-commit] Running pytest (generates coverage.xml)"
-& python -m pytest -q --maxfail=1 --disable-warnings --cov=. --cov-report=xml:coverage.xml
+
+# Debug log — write a short entry so it's obvious the hook started even when an editor is involved
+$logFile = Join-Path -Path $PSScriptRoot -ChildPath "pre-commit.log"
+try {
+    Add-Content -Path $logFile -Value "`n===== pre-commit hook started: $(Get-Date -Format o) - PID:$PID - User:$env:USERNAME" -ErrorAction SilentlyContinue
+    Add-Content -Path $logFile -Value "GIT_EDITOR=$(git var GIT_EDITOR) core.hooksPath=$(git config --get core.hooksPath)" -ErrorAction SilentlyContinue
+} catch {
+    Write-Warning "[pre-commit] unable to write to ${logFile}: ${_}"
+}
+
+# Prefer repository virtualenv python when available - this avoids running the system python without deps
+$projectVenvWin = Join-Path -Path $PSScriptRoot -ChildPath "..\.venv\Scripts\python.exe" | Resolve-Path -ErrorAction SilentlyContinue
+$projectVenvPosix = Join-Path -Path $PSScriptRoot -ChildPath "../.venv/bin/python" | Resolve-Path -ErrorAction SilentlyContinue
+
+if ($projectVenvWin) {
+    $PYTHON = $projectVenvWin -replace "\\`n",""
+    # Attempt to activate the venv for the duration of the script so that PYTHONPATH and PATH are correct
+    $activate = Join-Path -Path (Split-Path $PYTHON -Parent) -ChildPath "Activate.ps1"
+    if (Test-Path $activate) {
+        Write-Host "[pre-commit] Activating virtualenv via $activate"
+        . $activate
+    }
+} elseif ($projectVenvPosix) {
+    $PYTHON = $projectVenvPosix -replace "\\`n",""
+} else {
+    # Last-resort: try `py -3` then `python` on PATH
+    if (Get-Command -Name py -ErrorAction SilentlyContinue) {
+        $PYTHON = "py -3"
+    } else {
+        $PYTHON = "python"
+    }
+}
+
+Write-Host "[pre-commit] Using python: $PYTHON"
+try {
+    & $PYTHON -m pytest -q --maxfail=1 --disable-warnings --cov=. --cov-report=xml:coverage.xml
+}
+catch {
+    Write-Error "[pre-commit] pytest failed with error: $_"
+    exit 1
+}
 if ($LASTEXITCODE -ne 0) {
     Write-Error "[pre-commit] pytest failed - aborting commit"
     exit $LASTEXITCODE
