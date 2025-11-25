@@ -15,7 +15,13 @@ RUN pip install --upgrade pip setuptools wheel \
     || true
 
 ENV HOME=/home/appuser PYTHONUNBUFFERED=1
-COPY --chown=appuser:appuser app /app/app
+# Copy app code as root (default) and make it read-only so no write permissions
+# are assigned to the copied resource. Directories will be readable/executable,
+# files readable, and owned by root to prevent modification at runtime.
+COPY app /app/app
+RUN chown -R root:root /app/app \
+    && find /app/app -type d -exec chmod 0555 {} \; \
+    && find /app/app -type f -exec chmod 0444 {} \;
 
 USER appuser
 ENV PORT=8001
