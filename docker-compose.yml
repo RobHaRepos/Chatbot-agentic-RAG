@@ -80,6 +80,7 @@ services:
       LANGGRAPH_RETRIEVER_API_URL: "http://retriever:8001"
       LANGGRAPH_LLM_API_URL: "http://llm:8002"
       LOGGER_SERVICE_URL: "http://logger_service:8004"
+      TTS_SERVICE_URL: "http://tts_service:8005"
       MAX_RETRIEVES: "${MAX_RETRIEVES:-4}"
       SERVICE_NAME: "langgraph"
     depends_on:
@@ -92,6 +93,9 @@ services:
       timeout: 5s
       retries: 6
     restart: unless-stopped
+    networks:
+      - default
+      - tts_kokoro_network
 
   frontend:
     build:
@@ -121,4 +125,7 @@ volumes:
 networks:
   default:
     name: ${COMPOSE_PROJECT_NAME:-chatbot_network}_net
+  tts_kokoro_network:
+    external: true
+    name: tts_kokoro_network
 

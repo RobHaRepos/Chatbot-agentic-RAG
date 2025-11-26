@@ -10,12 +10,10 @@ RUN pip install --upgrade pip setuptools wheel \
     && pip install --no-cache-dir -r requirements-retriever.txt \
     && apt-get purge -y --auto-remove build-essential cmake git \
     && rm -rf /var/lib/apt/lists/* \
-    || true
-
-## Create non-root runtime user
-RUN groupadd -g 1000 appuser \
+    && groupadd -g 1000 appuser \
     && useradd -u 1000 -g appuser -m -d /home/appuser -s /bin/sh appuser \
-    && chown -R appuser:appuser /app
+    && chown -R appuser:appuser /app \
+    || true
 
 ENV HOME=/home/appuser PYTHONUNBUFFERED=1
 USER appuser
