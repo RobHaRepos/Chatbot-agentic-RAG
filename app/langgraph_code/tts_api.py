@@ -2,13 +2,14 @@ import os
 import io
 import httpx
 import logging
+from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import Optional
 
-from .wf_api import app
+router = APIRouter()
 
-TTS_SERVICE_URL = os.getenv("TTS_SERVICE_URL", "http://host.docker.internal:8005")
+TTS_SERVICE_URL = os.getenv("TTS_SERVICE_URL", "http://tts_service:8005")
 
 logger = logging.getLogger("langgraph_nodes")
 
@@ -17,7 +18,7 @@ class TTSRequest(BaseModel):
     voice: Optional[str] = "am_onyx"
     speed: Optional[float] = 1.0
     
-@app.post("/tts")
+@router.post("/tts")
 async def synthesize_speech(request: TTSRequest):
     """Synthesize speech from text using the TTS service."""
     async with httpx.AsyncClient(timeout=30.0) as client:

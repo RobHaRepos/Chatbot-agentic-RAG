@@ -5,7 +5,7 @@ import soundfile
 from pathlib import Path
 from fastapi.testclient import TestClient
 from tests.test_retriever import _service_up
-from app.langgraph_code.tts_api import app
+from app.langgraph_code.tts_api import router
 
 SAMPLE_RATE_TTS = int(os.getenv("SAMPLE_RATE_TTS", "24000"))
 TTS_SERVICE_URL = os.getenv("TTS_SERVICE_URL", "http://localhost:8005")
@@ -14,7 +14,7 @@ TTS_SERVICE_URL = os.getenv("TTS_SERVICE_URL", "http://localhost:8005")
 @pytest.mark.skipif(not _service_up(url=TTS_SERVICE_URL), reason="TTS service is not running")
 def test_synthesize_speech_integration():
     """Integration test: synthesize speech end-to-end."""
-    client = TestClient(app)
+    client = TestClient(router)
 
     response = client.post("/tts", json={"text": "This is an integration test."})
     assert response.status_code == 200
@@ -39,7 +39,7 @@ def test_save_local_audio_file():
         "speed": 1.0,
     }
     
-    client = TestClient(app)
+    client = TestClient(router)
 
     response = client.post("/tts", json=payload)
     assert response.status_code == 200

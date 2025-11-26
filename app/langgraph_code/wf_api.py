@@ -7,6 +7,8 @@ from typing import Optional
 import logging
 import hashlib
 
+from . import tts_api
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     graph = build_workflow()
@@ -25,6 +27,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(tts_api.router)
 
 @app.get("/health")
 def health_check():
