@@ -9,7 +9,7 @@ from typing import Optional
 
 router = APIRouter()
 
-TTS_SERVICE_URL = os.getenv("TTS_SERVICE_URL", "http://tts_service:8005")
+TTS_SERVICE_URL = os.getenv("TTS_SERVICE_URL", "http://tts_service:8005")  # NOSONAR - Internal Docker service communication
 
 logger = logging.getLogger("langgraph_nodes")
 
