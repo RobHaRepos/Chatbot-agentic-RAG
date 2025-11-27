@@ -95,11 +95,16 @@ class AiChatService:
         template = ([
         ("system", "You are a helpful AI assistant for a phone shop. Given the user question, "
                 "decide if you need clarification from the user or if you need to search for more information. "
-                "If the user question is unrelated to phones: "
-                '{{"action":"clarify","answer":" "}} '
-                "If the user question is related to phones: "
-                '{{"action":"retrieve"}} '
-                "Return only valid JSON in the response body."),
+                "If the user question is unrelated to phones: \n"
+                '{{"action":"clarify","answer":" "}}\n'
+                "If the user question is related to phones follow the steps:\n"
+                "1. step: Determine if there are several distinc different parts to the user query.\n"
+                "2. step: If there are multiple parts, choose just one part, whic is the most relevant to answer first. \n"
+                "3. step: write a RAG query to retrieve more information about that part.\n"
+                '{{"action":"retrieve", "query":"<short RAG query — focused always just on one of the missing information pieces>"}}\n'
+                "Return only valid JSON in the response body.\n"
+                "Example: What is the newest phone, what display does it have and what cameras?\n"
+                "First priority for example: model of the newest phone.\n"),
         ("user", "User question: {user_input}")
         ])
         content = self.extract_llm_response_content(template, {"user_input": user_input}, self.llm)

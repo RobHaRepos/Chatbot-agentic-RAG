@@ -12,18 +12,13 @@ RUN pip install --upgrade pip setuptools wheel \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd -g 1000 appuser \
     && useradd -u 1000 -g appuser -m -d /home/appuser -s /bin/sh appuser \
+    && chown -R appuser:appuser /app \
     || true
 
 ENV HOME=/home/appuser PYTHONUNBUFFERED=1
-# Copy app code as root (default) and make it read-only so no write permissions
-# are assigned to the copied resource. Directories will be readable/executable,
-# files readable, and owned by root to prevent modification at runtime.
-COPY app /app/app
-RUN chown -R root:root /app/app \
-    && find /app/app -type d -exec chmod 0555 {} \; \
-    && find /app/app -type f -exec chmod 0444 {} \;
-
 USER appuser
+
+COPY app /app/app
 ENV PORT=8001
 EXPOSE 8001
 CMD ["python", "-m", "uvicorn", "app.rag.retriever:app", "--host", "0.0.0.0", "--port", "8001", "--workers", "1"]
