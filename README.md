@@ -10,8 +10,8 @@ A microservices-based RAG chatbot using LangGraph for workflow orchestration, FA
 
 **Services:**
 - **Workflow** (port 8000): LangGraph-based orchestration with `/run` and `/tts` endpoints
-- **LLM** (port 8002): ChatOpenAI wrapper for answer generation and retrieval decisions
 - **Retriever** (port 8001): FAISS vector search with sentence-transformers embeddings
+- **LLM** (port 8002): ChatOpenAI wrapper for answer generation and retrieval decisions
 - **Frontend** (port 8003): Static HTML/JS UI with TTS playback
 - **Logger** (port 8004): Centralized log collection with SSE streaming
 - **TTS** (port 8005): External Kokoro TTS service (optional)
@@ -127,3 +127,7 @@ All Docker containers run as non-root `appuser` for security.
 4. Click speaker icons in UI to play audio
 
 **Note:** HTTP is used for internal Docker communication as services are network-isolated.
+
+## AI-Assisted Development
+
+The React frontend was developed with GitHub Copilot as an experiment in AI-accelerated learning. See [AI_DEVELOPMENT.md](AI_DEVELOPMENT.md) for details on this approach and insights gained.

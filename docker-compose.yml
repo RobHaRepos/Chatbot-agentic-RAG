@@ -105,14 +105,11 @@ services:
     ports:
       - "8003:80"
     environment:
-      LANGGRAPH_API_URL: "http://localhost:8000/run"
-      LOGGER_SERVICE_URL: "http://logger_service:8004"
-      SERVICE_NAME: "frontend"
+      API_URL: "http://localhost:8000/run"
     depends_on:
       - langgraph
-      - logger_service
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost/.well-known/health.json || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost/ || exit 1"]
       interval: 55s
       timeout: 5s
       retries: 6
