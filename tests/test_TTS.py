@@ -3,18 +3,26 @@ import os
 import pytest
 import soundfile
 from pathlib import Path
+from unittest.mock import patch, MagicMock
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from tests.test_retriever import _service_up
-from app.langgraph_code.tts_api import router
+from app.langgraph_code import tts_api
+import httpx
 
 SAMPLE_RATE_TTS = int(os.getenv("SAMPLE_RATE_TTS", "24000"))
-TTS_SERVICE_URL = os.getenv("TTS_SERVICE_URL", "http://localhost:8005")
+TEST_TTS_URL = os.getenv("TTS_SERVICE_URL", "http://localhost:8005")
+
+tts_api.TTS_SERVICE_URL = TEST_TTS_URL
+
+app_test = FastAPI()
+app_test.include_router(tts_api.router)
 
 @pytest.mark.integration
-@pytest.mark.skipif(not _service_up(url=TTS_SERVICE_URL), reason="TTS service is not running")
+@pytest.mark.skipif(not _service_up(url=TEST_TTS_URL), reason="TTS service is not running")
 def test_synthesize_speech_integration():
     """Integration test: synthesize speech end-to-end."""
-    client = TestClient(router)
+    client = TestClient(app_test)
 
     response = client.post("/tts", json={"text": "This is an integration test."})
     assert response.status_code == 200
@@ -26,7 +34,7 @@ def test_synthesize_speech_integration():
     assert data.size > 0
     
 @pytest.mark.integration
-@pytest.mark.skipif(not _service_up(url=TTS_SERVICE_URL), reason="TTS service is not running")
+@pytest.mark.skipif(not _service_up(url=TEST_TTS_URL), reason="TTS service is not running")
 def test_save_local_audio_file():
     """Test saving synthesized audio to a local file."""
     test_directory = Path(__file__).parent.parent / "out"
@@ -39,7 +47,7 @@ def test_save_local_audio_file():
         "speed": 1.0,
     }
     
-    client = TestClient(router)
+    client = TestClient(app_test)
 
     response = client.post("/tts", json=payload)
     assert response.status_code == 200
@@ -57,3 +65,21 @@ def test_save_local_audio_file():
     except Exception as e:
         print(f"Could not play audio file automatically: {e}")
         print(f"Please open the file manually at: {output_dir}")
+
+def test_tts_error_handling_http_error():
+    """Unit test: Test error handling when TTS service returns HTTP error."""
+    client = TestClient(app_test)
+    
+    mock_response = MagicMock()
+    mock_response.status_code = 500
+    mock_response.text = "Internal Server Error"
+    
+    async def mock_post(*args, **kwargs):
+        raise httpx.HTTPStatusError("Server error", request=MagicMock(), response=mock_response)
+    
+    with patch("httpx.AsyncClient.post", new=mock_post):
+        response = client.post("/tts", json={"text": "Test error handling"})
+        
+        assert response.status_code == 200
+        assert "error" in response.json()
+        assert "500" in response.json()["error"]

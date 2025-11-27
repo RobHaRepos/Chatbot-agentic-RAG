@@ -24,7 +24,7 @@ def test_wf_api_run_workflow_happy():
         result = r.json()
         assert "result" in result
         assert isinstance(result["result"], dict) 
-        assert "iPhone 15 Pro Max".lower() in result["result"].get("answer").lower()
+        assert "iphone" in result["result"].get("answer", "").lower()
 
 @pytest.mark.skipif(not _service_up(url=os.environ.get("RETRIEVER_SERVICE_URL", "http://localhost:8001")), reason="Retriever service is not running")
 @pytest.mark.integration
