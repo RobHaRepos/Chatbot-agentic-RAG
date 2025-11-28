@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
 import { Send } from 'lucide-react';
 import { useChatStore } from '@/store/chatStore';
 import { sendMessage } from '@/services/chatApi';
@@ -10,7 +9,6 @@ import { generateId } from '@/utils/helpers';
 
 export function ChatInput() {
   const [input, setInput] = useState('');
-  const [k, setK] = useState('');
   const { addMessage, updateMessage, setLoading } = useChatStore();
 
   const handleSubmit = async () => {
@@ -45,7 +43,6 @@ export function ChatInput() {
 
       const response = await sendMessage({
         question,
-        k: k ? Number(k) : undefined,
       });
 
       logger.log('info', 'received_response', { question, result: response.result });
@@ -97,19 +94,12 @@ export function ChatInput() {
           onKeyDown={handleKeyDown}
           placeholder="Type your question here..."
           className="min-h-[80px] md:min-h-[100px] resize-none"
+          aria-label="Message input"
         />
 
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 md:gap-3">
-          <Input
-            type="number"
-            min="1"
-            value={k}
-            onChange={(e) => setK(e.target.value)}
-            placeholder="k (optional)"
-            className="w-full sm:w-32"
-          />
-          <Button onClick={handleSubmit} className="w-full sm:w-auto sm:ml-auto" size="lg">
-            <Send className="h-4 w-4 mr-2" />
+        <div className="flex justify-end">
+          <Button onClick={handleSubmit} className="w-full sm:w-auto" size="lg" aria-label="Send message">
+            <Send className="h-4 w-4 mr-2" aria-hidden="true" />
             Send
           </Button>
         </div>

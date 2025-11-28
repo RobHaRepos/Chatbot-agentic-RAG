@@ -15,7 +15,13 @@ export function MessageList() {
   }, [messages]);
 
   return (
-    <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-3 md:space-y-4">
+    <div 
+      className="flex-1 overflow-y-auto p-3 md:p-4 space-y-3 md:space-y-4"
+      role="log"
+      aria-label="Chat messages"
+      aria-live="polite"
+      aria-relevant="additions"
+    >
       {messages.length === 0 && (
         <div className="flex items-center justify-center h-full text-muted-foreground">
           <div className="text-center space-y-2">
@@ -27,7 +33,7 @@ export function MessageList() {
       {messages.map((message) => (
         <MessageItem key={message.id} message={message} />
       ))}
-      <div ref={messagesEndRef} />
+      <div ref={messagesEndRef} aria-hidden="true" />
     </div>
   );
 }

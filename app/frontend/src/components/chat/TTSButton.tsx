@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Volume2, Square, Loader2 } from 'lucide-react';
 import { generateSpeech } from '@/services/ttsApi';
 import { useChatStore } from '@/store/chatStore';
+import { useTTSStore } from '@/store/ttsStore';
 
 interface TTSButtonProps {
   readonly text: string;
@@ -12,6 +13,7 @@ interface TTSButtonProps {
 export function TTSButton({ text, disabled }: Readonly<TTSButtonProps>) {
   const [isLoading, setIsLoading] = useState(false);
   const { activeAudio, setActiveAudio, stopActiveAudio } = useChatStore();
+  const { voice, speed } = useTTSStore();
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
 
   const isPlaying = activeAudio === currentAudio && currentAudio !== null;
@@ -29,7 +31,7 @@ export function TTSButton({ text, disabled }: Readonly<TTSButtonProps>) {
     stopActiveAudio();
 
     try {
-      const blob = await generateSpeech(text);
+      const blob = await generateSpeech(text, voice, speed);
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
 
@@ -57,12 +59,16 @@ export function TTSButton({ text, disabled }: Readonly<TTSButtonProps>) {
   };
 
   let icon;
+  let ariaLabel;
   if (isLoading) {
-    icon = <Loader2 className="h-4 w-4 animate-spin" />;
+    icon = <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />;
+    ariaLabel = 'Loading speech';
   } else if (isPlaying) {
-    icon = <Square className="h-4 w-4" />;
+    icon = <Square className="h-4 w-4" aria-hidden="true" />;
+    ariaLabel = 'Stop speaking';
   } else {
-    icon = <Volume2 className="h-4 w-4" />;
+    icon = <Volume2 className="h-4 w-4" aria-hidden="true" />;
+    ariaLabel = 'Read message aloud';
   }
 
   return (
@@ -72,6 +78,8 @@ export function TTSButton({ text, disabled }: Readonly<TTSButtonProps>) {
       onClick={handleClick}
       disabled={disabled || isLoading || !text.trim()}
       className="shrink-0"
+      aria-label={ariaLabel}
+      aria-busy={isLoading}
     >
       {icon}
     </Button>

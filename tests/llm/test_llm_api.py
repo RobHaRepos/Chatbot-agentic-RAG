@@ -3,7 +3,7 @@ import requests
 import pytest
 from types import SimpleNamespace
 from app.llm import llm_api
-from tests.test_retriever import _service_up
+from tests.rag.test_retriever import _service_up
 
 
 client = TestClient(llm_api.app)

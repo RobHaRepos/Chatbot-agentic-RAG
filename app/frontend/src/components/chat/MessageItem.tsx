@@ -12,11 +12,13 @@ export function MessageItem({ message }: Readonly<MessageItemProps>) {
   const isUser = message.sender === 'user';
 
   return (
-    <div
+    <article
       className={cn(
         'flex gap-2 md:gap-3 max-w-[95%] sm:max-w-[85%] md:max-w-[80%] animate-in fade-in slide-in-from-bottom-2',
         isUser ? 'ml-auto flex-row-reverse' : 'mr-auto'
       )}
+      aria-label={`Message from ${isUser ? 'you' : 'assistant'}`}
+      aria-busy={message.isLoading}
     >
       {!isUser && (
         <div className="flex-shrink-0">
@@ -43,15 +45,15 @@ export function MessageItem({ message }: Readonly<MessageItemProps>) {
 
         <div className="text-sm whitespace-pre-wrap break-words">
           {message.isLoading ? (
-            <div className="flex items-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin" />
+            <output className="flex items-center gap-2" aria-label="Loading response">
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
               <span>Thinking...</span>
-            </div>
+            </output>
           ) : (
             message.text
           )}
         </div>
       </div>
-    </div>
+    </article>
   );
 }

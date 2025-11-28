@@ -33,7 +33,7 @@ export function Sidebar({ isMobileMenuOpen, onClose }: Readonly<SidebarProps>) {
           </p>
         </div>
 
-        <nav className="flex-1 space-y-1 px-3">
+        <nav className="flex-1 space-y-1 px-3" aria-label="Main navigation">
           {navigation.map((item) => {
             const isActive = location.pathname === item.href;
             return (
@@ -41,6 +41,7 @@ export function Sidebar({ isMobileMenuOpen, onClose }: Readonly<SidebarProps>) {
                 key={item.name}
                 to={item.href}
                 onClick={onClose}
+                aria-current={isActive ? 'page' : undefined}
                 className={cn(
                   'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all',
                   isActive
@@ -48,7 +49,7 @@ export function Sidebar({ isMobileMenuOpen, onClose }: Readonly<SidebarProps>) {
                     : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                 )}
               >
-                <item.icon className="h-5 w-5" />
+                <item.icon className="h-5 w-5" aria-hidden="true" />
                 {item.name}
               </Link>
             );
