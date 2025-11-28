@@ -6,7 +6,7 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from tests.test_retriever import _service_up
+from tests.rag.test_retriever import _service_up
 from app.langgraph_code import tts_api
 import httpx
 

@@ -1,48 +1,14 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>LangGraph Chat</title>
-    <link rel="stylesheet" href="./static/style.css" />
-  <!-- Placeholder replaced at container start by docker-entrypoint.sh or served as runtime-config.json -->
-  <meta name="api-base" content="@@API_URL@@" />
+    <!-- Runtime configuration meta tag - replaced by docker-entrypoint.sh -->
+    <meta name="api-base" content="@@API_URL@@" />
   </head>
   <body>
-    <header class="site-header">
-      <div class="container">
-        <h1>LangGraph Chat</h1>
-        <p class="lead">Ask the bot a question and the LangGraph workflow will run.</p>
-      </div>
-    </header>
-
-    <main class="container main-grid">
-      <section class="chat-panel" id="chatPanel" aria-live="polite">
-        <div id="messages" class="messages"></div>
-      </section>
-
-      <aside class="control-panel">
-        <label for="queryInput" class="sr-only">Your question</label>
-        <textarea id="queryInput" placeholder="Type your question here..." rows="4"></textarea>
-
-        <div class="row">
-          <div class="flex">
-            <input id="kInput" type="number" min="1" placeholder="k (optional)" />
-          </div>
-          <button id="sendBtn" class="btn-primary">Send</button>
-        </div>
-
-        <div class="note">
-          <strong>Tip:</strong> Press Enter (Shift+Enter for newline) or click Send.
-        </div>
-      </aside>
-    </main>
-
-    <footer class="site-footer">
-      <div class="container">Built for LangGraph · <span id="apiUrlText"></span></div>
-    </footer>
-
-    <script src="./static/logger.js"></script>
-    <script src="./static/app.js"></script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

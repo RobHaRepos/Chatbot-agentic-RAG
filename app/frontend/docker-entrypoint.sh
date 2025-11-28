@@ -1,22 +1,15 @@
 #!/bin/sh
 set -e
 
-# If LANGGRAPH_API_URL is provided, try to replace placeholder in index.html
-HTML_INDEX="/usr/share/nginx/html/index.html"
-RUNTIME_JSON="/usr/share/nginx/html/runtime-config.json"
-
-if [ -n "${LANGGRAPH_API_URL}" ]; then
-  if grep -q "@@API_URL@@" "$HTML_INDEX" 2>/dev/null; then
-    echo "Replacing @@API_URL@@ in index.html with $LANGGRAPH_API_URL"
-    sed -i "s|@@API_URL@@|${LANGGRAPH_API_URL}|g" "$HTML_INDEX"
-  else
-    # write runtime config JSON that app.js may read
-    echo "Writing runtime-config.json with apiBase=${LANGGRAPH_API_URL}"
-    cat > "$RUNTIME_JSON" <<EOF
-{"apiBase":"${LANGGRAPH_API_URL}"}
-EOF
-  fi
+# Replace @@API_URL@@ placeholder with actual API_URL environment variable
+# This allows runtime configuration of the API URL
+if [ -n "$API_URL" ]; then
+  echo "Configuring API URL to: $API_URL"
+  find /usr/share/nginx/html -type f -name "*.html" -exec sed -i "s|@@API_URL@@|$API_URL|g" {} \;
+else
+  echo "No API_URL set, using default"
+  find /usr/share/nginx/html -type f -name "*.html" -exec sed -i "s|@@API_URL@@|/run|g" {} \;
 fi
 
-# If no index.html present (unlikely) keep going
+# Execute the main container command
 exec "$@"
