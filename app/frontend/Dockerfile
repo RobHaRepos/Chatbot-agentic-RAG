@@ -9,8 +9,10 @@ COPY package*.json ./
 # Install dependencies (--ignore-scripts prevents execution of arbitrary scripts from packages)
 RUN npm ci --ignore-scripts
 
-# Copy source code (sensitive files excluded via .dockerignore)
-COPY . .
+# Copy source code explicitly (only files needed for the build)
+COPY src/ ./src/
+COPY index.html tsconfig.json tsconfig.node.json vite.config.ts ./
+COPY tailwind.config.js postcss.config.js components.json ./
 
 # Build the application
 RUN npm run build
