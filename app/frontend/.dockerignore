@@ -1,5 +1,6 @@
 node_modules
 .git
+.gitignore
 .venv
 __pycache__
 *.pyc
@@ -7,5 +8,15 @@ __pycache__
 *.pyd
 *.swp
 Dockerfile
+.dockerignore
 *.md
 *.log
+
+# Sensitive files
+.env
+.env.*
+*.pem
+*.key
+*.crt
+*.secrets
+.npmrc

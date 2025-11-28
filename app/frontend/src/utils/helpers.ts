@@ -23,10 +23,10 @@ export const getTTSUrl = (): string => {
 };
 
 /**
- * Generate unique ID
+ * Generate unique ID using cryptographically secure random values
  */
 export const generateId = (): string => {
-  return `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+  return crypto.randomUUID();
 };
 
 /**
