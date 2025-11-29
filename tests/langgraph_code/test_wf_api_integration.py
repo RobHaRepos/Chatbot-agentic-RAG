@@ -4,6 +4,9 @@ from fastapi.testclient import TestClient
 from app.langgraph_code.wf_api import app
 from tests.rag.test_retriever import _service_up
 
+# Default store_id for integration tests - assumes store ID 1 exists
+DEFAULT_STORE_ID = 1
+
 @pytest.mark.skipif(not _service_up(url=os.environ.get("RETRIEVER_SERVICE_URL", "http://localhost:8001")), reason="Retriever service is not running")
 @pytest.mark.integration
 def test_wf_api_run_workflow_happy():
@@ -18,7 +21,7 @@ def test_wf_api_run_workflow_happy():
         assert r.status_code == 200
         assert r.json() == {"status": "ok"}
         
-        payload = {"question": "What is the newest iPhone?", "k": 5}
+        payload = {"question": "What is the newest iPhone?", "k": 5, "store_id": DEFAULT_STORE_ID}
         r = client.post("/run", json=payload)
         assert r.status_code == 200
         result = r.json()
@@ -36,7 +39,7 @@ def test_wf_api_run_workflow_multiple_retrieves():
             if r.status_code == 200 and r.json().get("status") is True:
                 break
     
-        payload = {"question": "What is the newest iphone, what display does it have, what camera does it have?", "k": 5}
+        payload = {"question": "What is the newest iphone, what display does it have, what camera does it have?", "k": 5, "store_id": DEFAULT_STORE_ID}
         r = client.post("/run", json=payload)
         assert r.status_code == 200
         result = r.json()
@@ -56,7 +59,7 @@ def test_run_workflow_no_question():
             if r.status_code == 200 and r.json().get("status") is True:
                 break
     
-        payload = {"question": "", "k": 5}
+        payload = {"question": "", "k": 5, "store_id": DEFAULT_STORE_ID}
         r = client.post("/run", json=payload)
         assert r.status_code == 200
         result = r.json()

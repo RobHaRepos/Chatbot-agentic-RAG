@@ -2,8 +2,8 @@ from types import SimpleNamespace
 import requests
 import pytest
 import logging
-import app.rag.retriever as retriever_module
-from app.rag.retriever import SearchRequest
+import app.rag.src.retriever as retriever_module
+from fastapi.testclient import TestClient
 
 from app.logger_service.handlers import HTTPLogHandler as _HTTPLogHandler
 from typing import cast
@@ -30,15 +30,30 @@ def fake_vector_store(monkeypatch):
     import langchain_huggingface
     class CheapEmb:
         def __init__(self, model_name=None, **kwargs):
-            # No-op stub initializer.
-            # The real `HuggingFaceEmbeddings` performs expensive model loading
-            # and external I/O which we must avoid in unit tests. This empty
-            # initializer lets tests substitute a lightweight stand-in without
-            # triggering the external dependencies.
+            # Stub to avoid loading real embedding models in tests
             pass
     monkeypatch.setattr(langchain_huggingface, "HuggingFaceEmbeddings", CheapEmb)
 
     return fake_store
+
+@pytest.fixture
+def test_client(monkeypatch):
+    """Create test client with mocked dependencies."""
+    # Mock FAISS and embeddings
+    monkeypatch.setattr(
+        retriever_module.FAISS,
+        "load_local",
+        lambda *a, **k: SimpleNamespace(as_retriever=lambda **x: SimpleNamespace(invoke=lambda q: [])),
+    )
+    monkeypatch.setattr(retriever_module, "embeddings", SimpleNamespace(), raising=False)
+    monkeypatch.setattr(retriever_module, "vector_store", SimpleNamespace(), raising=False)
+
+    # Mock database functions
+    monkeypatch.setattr(retriever_module, "init_db", lambda: None)
+    monkeypatch.setattr(retriever_module, "seed_embedding_models", lambda: None)
+    monkeypatch.setattr(retriever_module, "seed_default_store", lambda: None)
+
+    return TestClient(retriever_module.app)
 
 def _service_up(url: str) -> bool:
     """Return True when the retriever service health endpoint is reachable and OK."""
@@ -86,30 +101,34 @@ def test_retriever_attaches_http_handler():
         getattr(h, "_worker").join(timeout=1)
 
     
-def test_retrieve_documents_as_string(fake_vector_store):
-    """Assert retrieve_documents_as_string returns a non-empty concatenated string."""
-    req = SearchRequest(query="What are the best Iphones?", k=5)
-
-    docs = retriever_module.retrieve_documents_as_string(req)
-    doc_string = docs.get("documents", "")
-    print(type(doc_string))
-    print(doc_string)
+def test_retrieve_documents_as_string(test_client, monkeypatch):
+    """Assert retrieve_documents_as_string returns a non-empty concatenated string via API."""
+    class FakeRetriever:
+        def invoke(self, query):
+            return [
+                SimpleNamespace(page_content="Doc A"),
+                SimpleNamespace(page_content="Doc B"),
+            ]
+    
+    fake_index = SimpleNamespace(as_retriever=lambda *a, **k: FakeRetriever())
+    fake_store = SimpleNamespace(id=1, name="test", index_path="test/path")
+    
+    monkeypatch.setattr(retriever_module.crud, "get_store", lambda db, id: fake_store)
+    monkeypatch.setattr(retriever_module, "get_store_index", lambda id, path: fake_index)
+    
+    resp = test_client.post(
+        "/stores/retrieve_string",
+        params={"store_id": 1},
+        json={"query": "What are the best Iphones?", "k": 5}
+    )
+    
+    assert resp.status_code == 200
+    data = resp.json()
+    doc_string = data.get("documents", "")
     assert doc_string is not None and len(doc_string) > 0
     assert isinstance(doc_string, str)
     assert "Doc A" in doc_string
     assert "Doc B" in doc_string
-
-def test_retrieve_documents_as_list(fake_vector_store):
-    """Assert retrieve_documents_as_list returns a non-empty list of documents."""
-    req = SearchRequest(query="What are the best Iphones?", k=5)
-    docs = retriever_module.retrieve_documents_as_list(req)
-    doc_list = docs.documents
-    print(type(doc_list))
-    print(doc_list)
-    assert doc_list is not None and len(doc_list) > 0
-    assert isinstance(doc_list, list)
-    assert any("Doc A" == doc.page_content for doc in doc_list)
-    assert any("Doc B" == doc.page_content for doc in doc_list)
 
 @pytest.mark.skipif(not _service_up(url=BASE_URL), reason="Retriever service is not running")
 def test_health_endpoint():
@@ -120,10 +139,24 @@ def test_health_endpoint():
     assert "status" in data
     assert data["status"] == "ok"
 
+def _get_first_store_id() -> int | None:
+    """Helper to get the first available store_id from the retriever service."""
+    try:
+        resp = requests.get(f"{BASE_URL}/stores", timeout=5)
+        if resp.status_code == 200:
+            stores = resp.json()
+            if stores:
+                return stores[0]["id"]
+    except requests.RequestException:
+        pass
+    return None
+
 @pytest.mark.skipif(not _service_up(url=BASE_URL), reason="Retriever service is not running")
 def test_retrieve_documents_string_api():
     """Integration test: POST to retrieve_documents_string and assert non-empty string."""
-    resp = requests.post(f"{BASE_URL}/retrieve_documents_string", json=PAYLOAD, timeout=10)
+    store_id = _get_first_store_id()
+    assert store_id is not None, "Need at least one store in the retriever for this test"
+    resp = requests.post(f"{BASE_URL}/stores/retrieve_string?store_id={store_id}", json=PAYLOAD, timeout=10)
     assert resp.status_code == 200
     data = resp.json()
     assert "documents" in data

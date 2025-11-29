@@ -23,10 +23,16 @@ logger.setLevel(logging.INFO)
 
 
 async def node_retrieve_string(state: "OverallState") -> Dict[str, Any]:
+    store_id = state.get("store_id")
+    if not store_id:
+        logger.error("node_retrieve_string: no store_id provided")
+        return {"action": "clarify", "documents": ""}
+    
     payload = {"query": state["query"], "k": state.get("k")}
-    logger.info("node_retrieve_string: sending to %s payload=%s", RETRIEVER_API_URL, payload)
+    url = f"{RETRIEVER_API_URL}/stores/retrieve_string?store_id={store_id}"
+    logger.info("node_retrieve_string: sending to %s payload=%s", url, payload)
     async with httpx.AsyncClient(timeout=30.0) as client:
-        r = await client.post(f"{RETRIEVER_API_URL}/retrieve_documents_string", json=payload)
+        r = await client.post(url, json=payload)
         try:
             r.raise_for_status()
         except Exception:

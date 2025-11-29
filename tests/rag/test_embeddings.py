@@ -1,4 +1,4 @@
-from app.rag.embeddings import define_model_for_embeddings, embed_texts
+from app.rag.src.embeddings import define_model_for_embeddings, embed_texts
 from app.config import MODEL_NAME_EMBEDDING
 
 def test_define_model_for_embeddings():

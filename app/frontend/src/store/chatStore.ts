@@ -5,18 +5,21 @@ interface ChatState {
   messages: Message[];
   isLoading: boolean;
   activeAudio: HTMLAudioElement | null;
+  selectedStoreId: number | null;
   addMessage: (message: Message) => void;
   updateMessage: (id: string, updates: Partial<Message>) => void;
   clearMessages: () => void;
   setLoading: (loading: boolean) => void;
   setActiveAudio: (audio: HTMLAudioElement | null) => void;
   stopActiveAudio: () => void;
+  setSelectedStoreId: (storeId: number | null) => void;
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
   messages: [],
   isLoading: false,
   activeAudio: null,
+  selectedStoreId: null,
 
   addMessage: (message) =>
     set((state) => ({
@@ -48,4 +51,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
       }
     }
   },
+
+  setSelectedStoreId: (storeId) => set({ selectedStoreId: storeId }),
 }));

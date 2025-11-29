@@ -10,3 +10,5 @@ __pycache__/
 *.pyc
 .coverage
 .vscode/settings.json
+data/stores/
+data/vector_stores.db

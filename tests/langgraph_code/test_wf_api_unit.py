@@ -57,7 +57,7 @@ async def test_run_workflow_happy(monkeypatch):
     
     fake_graph = FakeGraph()
     monkeypatch.setattr("app.langgraph_code.wf_api.app.state.graph", fake_graph, raising=False)
-    request = wf_api.RunRequest(question="What is the newest Iphone?", k=3)
+    request = wf_api.RunRequest(question="What is the newest Iphone?", k=3, store_id=1)
     # cast to a Coroutine to satisfy static type checkers that this is awaitable
     result = await cast(Coroutine[Any, Any, dict[str, Any]], wf_api.run_workflow(request))
     assert isinstance(result, dict)
@@ -68,7 +68,7 @@ async def test_run_workflow_happy(monkeypatch):
 async def test_run_workflow_no_graph(monkeypatch):
     """run_workflow raises when app.state.graph is None."""
     monkeypatch.setattr("app.langgraph_code.wf_api.app.state.graph", None, raising=False)
-    request = wf_api.RunRequest(question="Will this fail?", k=3)
+    request = wf_api.RunRequest(question="Will this fail?", k=3, store_id=1)
     
     with pytest.raises(AttributeError):
         await cast(Coroutine[Any, Any, dict[str, Any]], wf_api.run_workflow(request))
@@ -80,7 +80,7 @@ async def test_run_workflow_invoke_exception(monkeypatch):
         def ainvoke(self, payload):
             raise RuntimeError("Graph invocation failed")
     monkeypatch.setattr("app.langgraph_code.wf_api.app.state.graph", BrokenGraph(), raising=False)
-    request = wf_api.RunRequest(question="Will invoke error?", k=3)
+    request = wf_api.RunRequest(question="Will invoke error?", k=3, store_id=1)
     
     with pytest.raises(RuntimeError):
         await cast(Coroutine[Any, Any, dict[str, Any]], wf_api.run_workflow(request))

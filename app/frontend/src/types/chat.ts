@@ -9,6 +9,7 @@ export interface Message {
 export interface ChatRequest {
   question: string;
   k?: number;
+  store_id?: number;  // Vector store to query
 }
 
 export interface ChatResponse {

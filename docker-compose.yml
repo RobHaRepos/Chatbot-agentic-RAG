@@ -26,7 +26,7 @@ services:
     ports:
       - "8001:8001"
     environment:
-      PATH_TO_FAISS_INDEX: /data/faiss_index
+      DATABASE_URL: "sqlite:////app/data/vector_stores.db"
       MODEL_NAME_EMBEDDING: "sentence-transformers/all-MiniLM-L6-v2"
       NUMBER_OF_DOCUMENTS_TO_RETRIEVE: 10
       LOGGER_SERVICE_URL: "http://logger_service:8004"
@@ -34,8 +34,8 @@ services:
     depends_on:
       - logger_service
     volumes:
-      - ./faiss_Hugging_index:/data/faiss_index:ro
-      - hf_cache:/root/.cache/huggingface
+      - ./data:/app/data
+      - hf_cache:/home/appuser/.cache/huggingface
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8001/health || exit 1"]
       interval: 55s
