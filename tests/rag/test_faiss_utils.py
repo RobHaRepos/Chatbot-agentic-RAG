@@ -4,13 +4,13 @@ import os
 import tempfile
 import shutil
 from types import SimpleNamespace
-from unittest.mock import Mock, AsyncMock, patch
+from unittest.mock import Mock, AsyncMock
 from fastapi import HTTPException, UploadFile
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app.rag.src import faiss_utils, crud, schemas
-from app.rag.src.database import Base, EmbeddingModel, VectorStore, Document
+from app.rag.src.database import Base, EmbeddingModel
 from app.rag.src.constants import METADATA_SOURCE, METADATA_DOCUMENT_ID
 
 # Enable async testing
@@ -58,8 +58,8 @@ class TestGetStoreOr404:
             db, schemas.VectorStoreCreate(name="test-store", embedding_model_id=model.id)
         )
 
-        result = faiss_utils.get_store_or_404(db, store.id)
-        assert result.id == store.id
+        result = faiss_utils.get_store_or_404(db, int(store.id))  # type: ignore[arg-type]
+        assert result.id == store.id  # type: ignore[comparison-overlap]
 
     def test_raises_404_when_not_found(self, test_db):
         """Raises HTTPException 404 when store doesn't exist."""
@@ -131,7 +131,7 @@ class TestFilterAndCollectChunks:
         fake_index = SimpleNamespace(docstore=SimpleNamespace(_dict={"a": doc1, "b": doc2}))
 
         chunks, metadatas = faiss_utils.filter_and_collect_chunks(
-            fake_index, lambda doc: doc.metadata.get(METADATA_DOCUMENT_ID) == 1
+            fake_index, lambda doc: doc.metadata.get(METADATA_DOCUMENT_ID) == 1  # type: ignore[arg-type]
         )
 
         assert len(chunks) == 1
@@ -158,7 +158,7 @@ class TestFilterAndCollectChunks:
             doc.metadata[METADATA_SOURCE] = "new.txt"
 
         _, metadatas = faiss_utils.filter_and_collect_chunks(
-            fake_index, lambda doc: True, transform_fn=transform
+            fake_index, lambda doc: True, transform_fn=transform  # type: ignore[arg-type]
         )
 
         assert metadatas[0][METADATA_SOURCE] == "new.txt"
@@ -304,7 +304,7 @@ class TestRebuildIndexWithNewContent:
         
         mock_embeddings = SimpleNamespace()
         new_index, chunk_count = faiss_utils.rebuild_index_with_new_content(
-            fake_index, 1, "New content here", "new.txt", mock_embeddings
+            fake_index, 1, "New content here", "new.txt", mock_embeddings  # type: ignore[arg-type]
         )
         
         assert new_index is fake_new_index
@@ -349,7 +349,7 @@ class TestUpdateIndexFilenames:
         
         mock_embeddings = SimpleNamespace()
         new_index = faiss_utils.update_index_filenames(
-            fake_index, 1, "renamed.txt", mock_embeddings
+            fake_index, 1, "renamed.txt", mock_embeddings  # type: ignore[arg-type]
         )
         
         assert new_index is fake_new_index
@@ -385,11 +385,11 @@ class TestProcessFileIntoChunks:
         content = text.encode("utf-8")
         
         chunks, metadatas, doc = faiss_utils.process_file_into_chunks(
-            file, text, content, store.id, splitter, db
+            file, text, content, int(store.id), splitter, db  # type: ignore[arg-type]
         )
         
         assert len(chunks) >= 1
         assert len(metadatas) == len(chunks)
-        assert doc.filename == "test.txt"
-        assert doc.file_size == len(content)
-        assert doc.chunk_count == len(chunks)
+        assert doc.filename == "test.txt"  # type: ignore[comparison-overlap]
+        assert doc.file_size == len(content)  # type: ignore[comparison-overlap]
+        assert doc.chunk_count == len(chunks)  # type: ignore[comparison-overlap]
