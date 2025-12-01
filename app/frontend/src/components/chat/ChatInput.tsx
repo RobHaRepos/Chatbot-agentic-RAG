@@ -2,12 +2,20 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Send } from 'lucide-react';
+import { IconLabel } from '@/components/ui/icon-label';
 import { useChatStore } from '@/store/chatStore';
-import { sendMessage } from '@/services/chatApi';
+import { sendMessage } from '@/services/api';
 import { logger } from '@/services/logger';
-import { generateId } from '@/utils/helpers';
+import { generateId } from '@/lib/utils';
+import { handleError, showError } from '@/lib/errorHandling';
+import { ERROR_TEMPLATES } from '@/lib/errorTemplates';
+import { extractResponseText } from '@/types/chat';
 import { StoreSelector } from './StoreSelector';
 
+/**
+ * FIXED: Uses toast for validation instead of polluting chat history
+ * Clean response parsing using extractResponseText utility
+ */
 export function ChatInput() {
   const [input, setInput] = useState('');
   const { addMessage, updateMessage, setLoading, selectedStoreId } = useChatStore();
@@ -16,14 +24,10 @@ export function ChatInput() {
     const question = input.trim();
     if (!question) return;
 
+    // FIXED: Use toast instead of adding bot message to chat history
     if (!selectedStoreId) {
-      // Show error if no store selected
-      const errorId = generateId();
-      addMessage({
-        id: errorId,
-        text: 'Please select a vector store before sending a message.',
-        sender: 'bot',
-        timestamp: new Date(),
+      showError('Please select a vector store before sending a message', {
+        title: 'No Store Selected',
       });
       return;
     }
@@ -61,30 +65,20 @@ export function ChatInput() {
 
       logger.log('info', 'received_response', { question, result: response.result });
 
-      // Parse response
-      let answerText = '';
-      if (typeof response.result === 'string') {
-        answerText = response.result;
-      } else if (response.result?.answer) {
-        answerText = typeof response.result.answer === 'object'
-          ? JSON.stringify(response.result.answer, null, 2)
-          : String(response.result.answer);
-      } else if (response.result?.text) {
-        answerText = String(response.result.text);
-      } else {
-        answerText = JSON.stringify(response.result, null, 2);
-      }
+      const answerText = extractResponseText(response);
 
       // Update bot message
       updateMessage(botMessageId, {
         text: answerText,
         isLoading: false,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.log('error', 'request_failed', { question, error: String(err) });
       
+      handleError(err, ...ERROR_TEMPLATES.CHAT_SEND(selectedStoreId, question));
+      
       updateMessage(botMessageId, {
-        text: `Error: ${err.message || 'Request failed'}`,
+        text: `Error: ${err instanceof Error ? err.message : 'Request failed'}`,
         isLoading: false,
       });
     } finally {
@@ -103,10 +97,9 @@ export function ChatInput() {
     <div className="border-t border-border bg-card/50 p-3 md:p-4">
       <div className="max-w-4xl mx-auto space-y-2 md:space-y-3">
         {/* Store Selector */}
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Knowledge base:</span>
+        <IconLabel icon={<span className="text-sm text-muted-foreground">Knowledge base:</span>} gap="sm">
           <StoreSelector />
-        </div>
+        </IconLabel>
 
         <Textarea
           value={input}

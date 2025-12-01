@@ -40,6 +40,15 @@ export interface Document {
   chunk_count: number;
 }
 
+export interface DocumentUpdate {
+  filename?: string;
+  content?: string;
+}
+
+export interface DocumentWithContent extends Document {
+  content: string;
+}
+
 // ======= Retrieval =======
 export interface RetrievalRequest {
   query: string;

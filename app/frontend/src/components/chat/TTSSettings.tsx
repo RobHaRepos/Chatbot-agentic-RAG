@@ -1,24 +1,33 @@
 import { useTTSStore } from '@/store/ttsStore';
-import { Select, SelectOption } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/radix-select';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
-import { DEFAULT_VOICES, getValidVoiceId, DEFAULT_VOICE_ID, DEFAULT_SPEED } from '@/types/tts';
+import { DEFAULT_VOICES, getValidVoiceId, DEFAULT_VOICE_ID, DEFAULT_SPEED, VoiceOption } from '@/types/tts';
 import { Settings2, RotateCcw } from 'lucide-react';
-import { useMemo, useEffect } from 'react';
+import { IconLabel } from '@/components/ui/icon-label';
+import { useEffect } from 'react';
+
+// Group voices by accent + gender at module scope (constant calculation)
+const groupedVoices: Record<string, VoiceOption[]> = (() => {
+  const groups: Record<string, VoiceOption[]> = {};
+  for (const v of DEFAULT_VOICES) {
+    const groupKey = `${v.accent} ${v.gender === 'female' ? 'Female' : 'Male'}`;
+    if (!groups[groupKey]) groups[groupKey] = [];
+    groups[groupKey].push(v);
+  }
+  return groups;
+})();
 
 export function TTSSettings() {
   const { voice, speed, setVoice, setSpeed, resetToDefaults } = useTTSStore();
-
-  // Transform voices to select options with grouping
-  const voiceOptions: SelectOption[] = useMemo(
-    () =>
-      DEFAULT_VOICES.map((v) => ({
-        value: v.id,
-        label: `${v.name} (${v.gender === 'female' ? '♀' : '♂'})`,
-        group: `${v.accent} ${v.gender === 'female' ? 'Female' : 'Male'}`,
-      })),
-    []
-  );
 
   // Validate voice on mount - fallback to default if not available
   useEffect(() => {
@@ -34,10 +43,9 @@ export function TTSSettings() {
   return (
     <div className="border border-border rounded-lg bg-card/50 p-4 space-y-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-          <Settings2 className="h-4 w-4" aria-hidden="true" />
+        <IconLabel icon={<Settings2 className="h-4 w-4" aria-hidden="true" />} gap="sm" className="text-sm font-medium text-muted-foreground">
           <span>Voice Settings</span>
-        </div>
+        </IconLabel>
         {!isDefault && (
           <Button
             variant="ghost"
@@ -46,8 +54,9 @@ export function TTSSettings() {
             className="text-xs h-7"
             aria-label="Reset to default settings"
           >
-            <RotateCcw className="h-3 w-3 mr-1" aria-hidden="true" />
-            Reset
+            <IconLabel icon={<RotateCcw className="h-3 w-3" aria-hidden="true" />} gap="xs">
+              Reset
+            </IconLabel>
           </Button>
         )}
       </div>
@@ -55,17 +64,26 @@ export function TTSSettings() {
       <div className="space-y-4">
         {/* Voice Selection */}
         <div className="space-y-2">
-          <label htmlFor="voice-select" className="text-sm font-medium">
+          <span id="voice-label" className="text-sm font-medium">
             Voice
-          </label>
-          <Select
-            id="voice-select"
-            value={voice}
-            onChange={setVoice}
-            options={voiceOptions}
-            groupBy={true}
-            aria-label="Select voice"
-          />
+          </span>
+          <Select value={voice} onValueChange={setVoice}>
+            <SelectTrigger aria-labelledby="voice-label">
+              <SelectValue placeholder="Select a voice" />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(groupedVoices).map(([groupName, voices]) => (
+                <SelectGroup key={groupName}>
+                  <SelectLabel>{groupName}</SelectLabel>
+                  {voices.map((v) => (
+                    <SelectItem key={v.id} value={v.id}>
+                      {v.name} ({v.gender === 'female' ? '♀' : '♂'})
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Speed Control */}

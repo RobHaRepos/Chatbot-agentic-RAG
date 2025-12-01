@@ -167,7 +167,7 @@ class TestVectorStoresCRUD:
             retriever_module.crud, "update_store", lambda db, id, u: fake_store
         )
 
-        resp = client.put("/stores/1", json={"name": "updated-store"})
+        resp = client.patch("/stores/1", json={"name": "updated-store"})
 
         assert resp.status_code == 200
         assert resp.json()["name"] == "updated-store"
@@ -176,14 +176,15 @@ class TestVectorStoresCRUD:
         """PUT /stores/{id} returns 404 when not found."""
         monkeypatch.setattr(retriever_module.crud, "update_store", lambda db, id, u: None)
 
-        resp = client.put("/stores/999", json={"name": "x"})
+        resp = client.patch("/stores/999", json={"name": "x"})
 
         assert resp.status_code == 404
 
     def test_delete_store_success(self, client, monkeypatch):
         """DELETE /stores/{id} returns 204 on success."""
+        from app.rag.src import faiss_utils
         monkeypatch.setattr(retriever_module.crud, "delete_store", lambda db, id: True)
-        retriever_module.loaded_stores.clear()
+        faiss_utils.loaded_stores.clear()
 
         resp = client.delete("/stores/1")
 
@@ -199,12 +200,13 @@ class TestVectorStoresCRUD:
 
     def test_delete_store_invalidates_cache(self, client, monkeypatch):
         """DELETE /stores/{id} removes store from loaded_stores cache."""
-        retriever_module.loaded_stores[1] = MagicMock(spec=retriever_module.FAISS)
+        from app.rag.src import faiss_utils
+        faiss_utils.loaded_stores[1] = MagicMock(spec=retriever_module.FAISS)
         monkeypatch.setattr(retriever_module.crud, "delete_store", lambda db, id: True)
 
         client.delete("/stores/1")
 
-        assert 1 not in retriever_module.loaded_stores
+        assert 1 not in faiss_utils.loaded_stores
 
 
 class TestRetrievalEndpoints:
@@ -224,7 +226,7 @@ class TestRetrievalEndpoints:
             similarity_search_with_score=lambda q, k: [(fake_doc, 0.5)]
         )
         monkeypatch.setattr(
-            retriever_module, "get_store_index", lambda id, path: fake_index
+            retriever_module, "get_store_index", lambda id, path, emb: fake_index
         )
 
         resp = client.post("/stores/1/retrieve", json={"query": "test", "k": 5})
@@ -259,7 +261,7 @@ class TestRetrievalEndpoints:
         ]
         fake_index = SimpleNamespace(similarity_search_with_score=lambda q, k: fake_docs)
         monkeypatch.setattr(
-            retriever_module, "get_store_index", lambda id, path: fake_index
+            retriever_module, "get_store_index", lambda id, path, emb: fake_index
         )
 
         resp = client.post("/stores/1/retrieve", json={"query": "test", "k": 3})
@@ -282,7 +284,7 @@ class TestRetrievalEndpoints:
         fake_retriever = SimpleNamespace(invoke=lambda q: fake_docs)
         fake_index = SimpleNamespace(as_retriever=lambda **k: fake_retriever)
         monkeypatch.setattr(
-            retriever_module, "get_store_index", lambda id, path: fake_index
+            retriever_module, "get_store_index", lambda id, path, emb: fake_index
         )
 
         resp = client.post(
@@ -323,7 +325,7 @@ class TestRetrievalEndpoints:
 
         fake_index = SimpleNamespace(as_retriever=fake_as_retriever)
         monkeypatch.setattr(
-            retriever_module, "get_store_index", lambda id, path: fake_index
+            retriever_module, "get_store_index", lambda id, path, emb: fake_index
         )
         monkeypatch.setattr(retriever_module, "DEFAULT_K", 10)
 

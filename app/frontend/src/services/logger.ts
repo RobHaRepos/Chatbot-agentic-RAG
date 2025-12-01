@@ -29,5 +29,5 @@ export const logger = new FrontendLogger();
 
 // Make it globally available (for backward compatibility)
 if (globalThis.window !== undefined) {
-  (globalThis as any).FrontendLogger = logger;
+  (globalThis as unknown as { FrontendLogger: FrontendLogger }).FrontendLogger = logger;
 }

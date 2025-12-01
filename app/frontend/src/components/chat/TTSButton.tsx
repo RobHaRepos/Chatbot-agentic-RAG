@@ -2,57 +2,46 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Volume2, Square, Loader2 } from 'lucide-react';
 import { generateSpeech } from '@/services/ttsApi';
-import { useChatStore } from '@/store/chatStore';
 import { useTTSStore } from '@/store/ttsStore';
+import { useAudioPlayback } from '@/hooks/useAudioPlayback';
+import { handleError } from '@/lib/errorHandling';
+import { ERROR_TEMPLATES } from '@/lib/errorTemplates';
 
 interface TTSButtonProps {
   readonly text: string;
   readonly disabled?: boolean;
 }
 
+/**
+ * FIXED: Audio state managed locally with custom hook instead of global Zustand store
+ */
 export function TTSButton({ text, disabled }: Readonly<TTSButtonProps>) {
   const [isLoading, setIsLoading] = useState(false);
-  const { activeAudio, setActiveAudio, stopActiveAudio } = useChatStore();
+  const [isPlaying, setIsPlaying] = useState(false);
   const { voice, speed } = useTTSStore();
-  const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
-
-  const isPlaying = activeAudio === currentAudio && currentAudio !== null;
+  const { play, stop } = useAudioPlayback();
 
   const handleClick = async () => {
     if (isPlaying) {
-      stopActiveAudio();
-      setCurrentAudio(null);
+      stop();
+      setIsPlaying(false);
       return;
     }
 
     if (!text.trim()) return;
 
     setIsLoading(true);
-    stopActiveAudio();
 
     try {
       const blob = await generateSpeech(text, voice, speed);
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-
-      audio.onended = () => {
-        URL.revokeObjectURL(url);
-        setActiveAudio(null);
-        setCurrentAudio(null);
-      };
-
-      audio.onerror = (e) => {
-        console.error('Audio playback error', e);
-        setActiveAudio(null);
-        setCurrentAudio(null);
-      };
-
-      setCurrentAudio(audio);
-      setActiveAudio(audio);
-      await audio.play();
+      setIsPlaying(true);
+      
+      await play(blob);
+      
+      setIsPlaying(false);
     } catch (err) {
-      console.error('TTS error:', err);
-      alert('Failed to generate speech. Please try again.');
+      handleError(err, ...ERROR_TEMPLATES.TTS_GENERATE(text, voice, speed));
+      setIsPlaying(false);
     } finally {
       setIsLoading(false);
     }

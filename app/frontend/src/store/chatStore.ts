@@ -4,21 +4,21 @@ import { Message } from '@/types/chat';
 interface ChatState {
   messages: Message[];
   isLoading: boolean;
-  activeAudio: HTMLAudioElement | null;
   selectedStoreId: number | null;
   addMessage: (message: Message) => void;
   updateMessage: (id: string, updates: Partial<Message>) => void;
   clearMessages: () => void;
   setLoading: (loading: boolean) => void;
-  setActiveAudio: (audio: HTMLAudioElement | null) => void;
-  stopActiveAudio: () => void;
   setSelectedStoreId: (storeId: number | null) => void;
 }
 
-export const useChatStore = create<ChatState>((set, get) => ({
+/**
+ * FIXED: Removed activeAudio DOM element from global state
+ * Audio playback should be managed locally with refs, not in Zustand
+ */
+export const useChatStore = create<ChatState>((set) => ({
   messages: [],
   isLoading: false,
-  activeAudio: null,
   selectedStoreId: null,
 
   addMessage: (message) =>
@@ -36,21 +36,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
   clearMessages: () => set({ messages: [] }),
 
   setLoading: (loading) => set({ isLoading: loading }),
-
-  setActiveAudio: (audio) => set({ activeAudio: audio }),
-
-  stopActiveAudio: () => {
-    const { activeAudio } = get();
-    if (activeAudio) {
-      try {
-        activeAudio.pause();
-      } catch (err) {
-        console.error('Failed to pause active audio', err);
-      } finally {
-        set({ activeAudio: null });
-      }
-    }
-  },
 
   setSelectedStoreId: (storeId) => set({ selectedStoreId: storeId }),
 }));

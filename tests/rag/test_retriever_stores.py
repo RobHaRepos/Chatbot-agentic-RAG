@@ -8,7 +8,8 @@ class TestGetStoreIndex:
 
     def test_loads_index_when_not_cached(self, monkeypatch):
         """First call loads index and caches it."""
-        retriever_module.loaded_stores.clear()
+        from app.rag.src import faiss_utils
+        faiss_utils.loaded_stores.clear()
 
         fake_index = SimpleNamespace(similarity_search_with_score=lambda q, k: [])
         monkeypatch.setattr(
@@ -17,17 +18,21 @@ class TestGetStoreIndex:
             lambda path, emb, allow_dangerous_deserialization: fake_index,
         )
         monkeypatch.setattr(retriever_module, "embeddings", SimpleNamespace(), raising=False)
+        # Mock os.path.exists to return True so index loading is attempted
+        monkeypatch.setattr("os.path.exists", lambda path: True)
+        mock_embeddings = SimpleNamespace()
 
-        result = retriever_module.get_store_index(1, "fake/path")
+        result = retriever_module.get_store_index(1, "fake/path", mock_embeddings)
 
         assert result is fake_index
-        assert 1 in retriever_module.loaded_stores
+        assert 1 in faiss_utils.loaded_stores
 
     def test_returns_cached_index(self, monkeypatch):
         """Second call returns cached index without loading."""
+        from app.rag.src import faiss_utils
         cached_index = SimpleNamespace(name="cached")
         # Type ignore for test - we're using SimpleNamespace as mock
-        retriever_module.loaded_stores[99] = cached_index  # type: ignore
+        faiss_utils.loaded_stores[99] = cached_index  # type: ignore
 
         load_called = []
         monkeypatch.setattr(
@@ -35,15 +40,17 @@ class TestGetStoreIndex:
             "load_local",
             lambda *a, **k: load_called.append(1),
         )
+        mock_embeddings = SimpleNamespace()
 
-        result = retriever_module.get_store_index(99, "any/path")
+        result = retriever_module.get_store_index(99, "any/path", mock_embeddings)
 
         assert result is cached_index
         assert load_called == []  # load_local not called
 
     def test_different_stores_cached_separately(self, monkeypatch):
         """Each store ID has its own cached index."""
-        retriever_module.loaded_stores.clear()
+        from app.rag.src import faiss_utils
+        faiss_utils.loaded_stores.clear()
 
         call_count = [0]
 
@@ -53,13 +60,16 @@ class TestGetStoreIndex:
 
         monkeypatch.setattr(retriever_module.FAISS, "load_local", fake_load)
         monkeypatch.setattr(retriever_module, "embeddings", SimpleNamespace(), raising=False)
+        # Mock os.path.exists to return True so index loading is attempted
+        monkeypatch.setattr("os.path.exists", lambda path: True)
+        mock_embeddings = SimpleNamespace()
 
-        idx1 = retriever_module.get_store_index(1, "path1")
-        idx2 = retriever_module.get_store_index(2, "path2")
+        idx1 = retriever_module.get_store_index(1, "path1", mock_embeddings)
+        idx2 = retriever_module.get_store_index(2, "path2", mock_embeddings)
 
         assert getattr(idx1, "id") == 1
         assert getattr(idx2, "id") == 2
-        assert len(retriever_module.loaded_stores) == 2
+        assert len(faiss_utils.loaded_stores) == 2
 
 
 class TestInvalidateStoreIndex:
@@ -67,14 +77,16 @@ class TestInvalidateStoreIndex:
 
     def test_removes_cached_store(self):
         """Invalidating removes store from cache."""
-        retriever_module.loaded_stores[5] = SimpleNamespace()  # type: ignore
+        from app.rag.src import faiss_utils
+        faiss_utils.loaded_stores[5] = SimpleNamespace()  # type: ignore
 
         retriever_module.invalidate_store_index(5)
 
-        assert 5 not in retriever_module.loaded_stores
+        assert 5 not in faiss_utils.loaded_stores
 
     def test_no_error_if_not_cached(self):
         """Invalidating non-existent store doesn't raise."""
-        retriever_module.loaded_stores.clear()
+        from app.rag.src import faiss_utils
+        faiss_utils.loaded_stores.pop(999, None)
 
         retriever_module.invalidate_store_index(999)  # Should not raise

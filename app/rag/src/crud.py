@@ -2,8 +2,9 @@ import os
 import shutil
 from sqlalchemy.orm import Session
 from typing import List, Optional
+from . import database
 from .database import EmbeddingModel, VectorStore, Document
-from .schemas import VectorStoreCreate, VectorStoreUpdate
+from .schemas import VectorStoreCreate, VectorStoreUpdate, DocumentCreate
 
 DATA_DIR = os.getenv("VECTOR_STORE_DATA_DIR", "./data/stores")
 
@@ -29,6 +30,7 @@ def create_store(db: Session, store: VectorStoreCreate) -> VectorStore:
     db.add(db_store)
     db.commit()
     db.refresh(db_store)
+    
     return db_store
 
 def get_stores(db: Session, skip: int = 0, limit: int = 100) -> List[VectorStore]:
@@ -66,20 +68,37 @@ def delete_store(db: Session, store_id: int) -> bool:
     db.commit()
     return True
 
-def create_document(db: Session, store_id: int, filename: str, filetype: str, filesize: int) -> Document:
+def create_document(db: Session, document: DocumentCreate) -> Document:
     """Create a new document record associated with a vector store."""
-    doc = Document(
-        store_id=store_id,
-        filename=filename,
-        file_type=filetype,
-        file_size=filesize,
-    )
+    doc = database.Document(**document.model_dump())
     db.add(doc)
     db.commit()
     db.refresh(doc)
     return doc
 
-def get_store_documents(db: Session, store_id: int) -> List[Document]:
-    """Retrieve all documents associated with a specific vector store."""
-    return db.query(Document).filter(Document.store_id == store_id).all()
-        
+def get_documents(db: Session, store_id: int) -> List[Document]:
+    """Retrieve all documents for a specific vector store."""
+    return db.query(database.Document).filter(database.Document.store_id == store_id).all()
+
+def get_document(db: Session, doc_id: int) -> Optional[Document]:
+    """Retrieve a specific document by its ID."""
+    return db.query(database.Document).filter(database.Document.id == doc_id).first()
+
+def delete_document(db: Session, doc_id: int) -> bool:
+    """Delete a document record."""
+    doc = get_document(db, doc_id)
+    if not doc:
+        return False
+    
+    db.delete(doc)
+    db.commit()
+    return True
+
+def update_store_stats(db: Session, store_id: int):
+    """Update the document and chunk counts for a vector store."""
+    store = db.query(VectorStore).filter(VectorStore.id == store_id).first()
+    if store:
+        docs = db.query(database.Document).filter(database.Document.store_id == store_id).all()
+        setattr(store, 'document_count', len(docs))
+        setattr(store, 'chunk_count', sum(doc.chunk_count for doc in docs))
+        db.commit()        

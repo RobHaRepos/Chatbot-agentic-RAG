@@ -1,60 +1,50 @@
-import { useState, useEffect } from 'react';
-import { Database, AlertCircle, ChevronDown } from 'lucide-react';
+import { useEffect, useRef } from 'react';
+import { Database, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { getStores } from '@/services/retrieverApi';
+import { IconLabel } from '@/components/ui/icon-label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/radix-select';
+import { useStores } from '@/hooks/useVectorStores';
 import { useChatStore } from '@/store/chatStore';
-import type { VectorStore } from '@/types/vectorStore';
+import { SkeletonSelect } from '@/components/common/SkeletonSelect';
 
+/**
+ * FIXED: Prevents infinite loop by tracking if auto-selection already happened
+ * Better accessibility, proper keyboard navigation, consistent styling
+ */
 export function StoreSelector() {
-  const [stores, setStores] = useState<VectorStore[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isOpen, setIsOpen] = useState(false);
-  
   const { selectedStoreId, setSelectedStoreId } = useChatStore();
+  const hasAutoSelectedRef = useRef(false);
   
-  const selectedStore = stores.find(s => s.id === selectedStoreId);
+  // Use React Query hook for consistency
+  const { data: stores = [], isLoading, error, refetch } = useStores();
 
+  // Auto-select first active store if none selected (only once)
   useEffect(() => {
-    loadStores();
-  }, []);
-
-  const loadStores = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await getStores();
-      setStores(data);
-      // Auto-select first active store if none selected
-      if (!selectedStoreId && data.length > 0) {
-        const activeStore = data.find(s => s.is_active) || data[0];
-        setSelectedStoreId(activeStore.id);
-      }
-    } catch {
-      setError('Failed to load stores');
-    } finally {
-      setLoading(false);
+    if (!selectedStoreId && stores.length > 0 && !hasAutoSelectedRef.current) {
+      const activeStore = stores.find(s => s.is_active) || stores[0];
+      setSelectedStoreId(activeStore.id);
+      hasAutoSelectedRef.current = true;
     }
-  };
+  }, [stores, selectedStoreId, setSelectedStoreId]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Database className="h-4 w-4 animate-pulse" />
-        <span>Loading stores...</span>
-      </div>
-    );
+  if (isLoading) {
+    return <SkeletonSelect />;
   }
 
   if (error) {
     return (
-      <div className="flex items-center gap-2 text-sm text-destructive">
-        <AlertCircle className="h-4 w-4" />
-        <span>{error}</span>
-        <Button variant="ghost" size="sm" onClick={loadStores}>
+      <IconLabel icon={<AlertCircle className="h-4 w-4" />} gap="sm" className="text-sm text-destructive">
+        <span>Failed to load stores</span>
+        <Button variant="ghost" size="sm" onClick={() => refetch()}>
           Retry
         </Button>
-      </div>
+      </IconLabel>
     );
   }
 
@@ -68,57 +58,25 @@ export function StoreSelector() {
   }
 
   return (
-    <div className="relative">
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2"
-      >
-        <Database className="h-4 w-4" />
-        <span className="max-w-[150px] truncate">
-          {selectedStore?.name || 'Select store'}
-        </span>
-        <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-      </Button>
-      
-      {isOpen && (
-        <>
-          {/* Backdrop */}
-          <div 
-            className="fixed inset-0 z-10" 
-            onClick={() => setIsOpen(false)} 
-          />
-          
-          {/* Dropdown */}
-          <div className="absolute top-full mt-1 left-0 z-20 w-64 bg-popover border border-border rounded-md shadow-lg overflow-hidden">
-            <div className="max-h-60 overflow-y-auto">
-              {stores.map((store) => (
-                <button
-                  key={store.id}
-                  onClick={() => {
-                    setSelectedStoreId(store.id);
-                    setIsOpen(false);
-                  }}
-                  className={`w-full px-3 py-2 text-left hover:bg-accent transition-colors ${
-                    store.id === selectedStoreId ? 'bg-accent' : ''
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-sm truncate">{store.name}</span>
-                    {!store.is_active && (
-                      <span className="text-xs text-muted-foreground">(inactive)</span>
-                    )}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {store.document_count} docs • {store.chunk_count} chunks
-                  </div>
-                </button>
-              ))}
+    <Select
+      value={selectedStoreId?.toString() || ''}
+      onValueChange={(value) => setSelectedStoreId(Number.parseInt(value, 10))}
+    >
+      <SelectTrigger className="w-[200px]">
+        <SelectValue placeholder="Select a store" />
+      </SelectTrigger>
+      <SelectContent>
+        {stores.map((store) => (
+          <SelectItem key={store.id} value={store.id.toString()}>
+            <div className="flex items-center justify-between w-full">
+              <span className="font-medium">{store.name}</span>
+              {!store.is_active && (
+                <span className="text-xs text-muted-foreground ml-2">(inactive)</span>
+              )}
             </div>
-          </div>
-        </>
-      )}
-    </div>
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }

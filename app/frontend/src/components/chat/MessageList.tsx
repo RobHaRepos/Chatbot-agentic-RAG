@@ -2,16 +2,24 @@ import { useChatStore } from '@/store/chatStore';
 import { MessageItem } from './MessageItem';
 import { useEffect, useRef } from 'react';
 
+/**
+ * FIXED: Only scrolls when new messages are added, not on every update
+ */
 export function MessageList() {
   const messages = useChatStore((state) => state.messages);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const prevCountRef = useRef(messages.length);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   useEffect(() => {
-    scrollToBottom();
+    // Only scroll when new messages are added, not on updates
+    if (messages.length > prevCountRef.current) {
+      scrollToBottom();
+    }
+    prevCountRef.current = messages.length;
   }, [messages]);
 
   return (

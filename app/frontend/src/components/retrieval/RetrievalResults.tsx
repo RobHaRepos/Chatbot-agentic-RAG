@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Search } from 'lucide-react';
 import { ScoreBadge } from './ScoreBadge';
@@ -9,9 +10,10 @@ interface RetrievalResultsProps {
 }
 
 /**
+ * FIXED: Memoized to prevent re-renders when parent state changes
  * Displays a list of retrieved document chunks with their similarity scores.
  */
-export function RetrievalResults({ 
+export const RetrievalResults = memo(function RetrievalResults({ 
   chunks, 
   emptyMessage = 'No results found' 
 }: Readonly<RetrievalResultsProps>) {
@@ -48,4 +50,4 @@ export function RetrievalResults({
       ))}
     </div>
   );
-}
+});

@@ -1,19 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, AlertCircle } from 'lucide-react';
-
-interface LoadingStateProps {
-  message?: string;
-}
-
-export function LoadingState({ message }: Readonly<LoadingStateProps>) {
-  return (
-    <div className="flex flex-col items-center justify-center py-12 gap-3">
-      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      {message && <p className="text-sm text-muted-foreground">{message}</p>}
-    </div>
-  );
-}
+import { AlertCircle } from 'lucide-react';
+import { IconLabel } from '@/components/ui/icon-label';
 
 interface ErrorStateProps {
   message: string;
@@ -23,14 +11,15 @@ interface ErrorStateProps {
 export function ErrorState({ message, onRetry }: Readonly<ErrorStateProps>) {
   return (
     <Card className="border-destructive">
-      <CardContent className="flex items-center gap-3 py-6">
-        <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0" />
-        <p className="text-sm flex-1">{message}</p>
-        {onRetry && (
-          <Button variant="outline" size="sm" onClick={onRetry}>
-            Retry
-          </Button>
-        )}
+      <CardContent className="py-6">
+        <IconLabel icon={<AlertCircle className="h-5 w-5 text-destructive flex-shrink-0" />} gap="md">
+          <p className="text-sm flex-1">{message}</p>
+          {onRetry && (
+            <Button variant="outline" size="sm" onClick={onRetry}>
+              Retry
+            </Button>
+          )}
+        </IconLabel>
       </CardContent>
     </Card>
   );

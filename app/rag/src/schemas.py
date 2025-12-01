@@ -61,3 +61,27 @@ class RetrievalResponse(BaseModel):
     chunks: List[RetrievedChunk]
     store_id: int
     store_name: str
+    
+class DocumentCreate(BaseModel):
+    """Request schema for creating a document. Validates incoming JSON."""
+    store_id: int
+    filename: str
+    file_type: Optional[str] = None
+    file_size: int
+    chunk_count: int
+
+class DocumentUpdate(BaseModel):
+    """Request schema for updating a document. Validates incoming JSON."""
+    filename: Optional[str] = Field(None, min_length=1, max_length=512)
+    content: Optional[str] = Field(None, min_length=1)
+    
+class DocumentWithContent(BaseModel):
+    """Response schema for document with full content."""
+    id: int
+    filename: str
+    file_type: Optional[str]
+    file_size: Optional[int]
+    chunk_count: int
+    content: str
+    
+    model_config = ConfigDict(from_attributes=True)

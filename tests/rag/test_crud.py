@@ -14,7 +14,7 @@ def test_db_with_crud():
     """Create test database with CRUD module patched."""
     from app.rag.src.database import Base, EmbeddingModel, VectorStore, Document
     from app.rag.src import crud
-    from app.rag.src.schemas import VectorStoreCreate, VectorStoreUpdate
+    from app.rag.src.schemas import VectorStoreCreate, VectorStoreUpdate, DocumentCreate
 
     engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
     test_session_local = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -41,6 +41,7 @@ def test_db_with_crud():
         "temp_dir": temp_dir,
         "VectorStoreCreate": VectorStoreCreate,
         "VectorStoreUpdate": VectorStoreUpdate,
+        "DocumentCreate": DocumentCreate,
         "EmbeddingModel": EmbeddingModel,
         "VectorStore": VectorStore,
         "Document": Document,
@@ -337,7 +338,7 @@ class TestCreateDocument:
             db, vector_store_create(name="doc-store", embedding_model_id=model.id)
         )
 
-        doc = crud.create_document(db, store.id, "test.pdf", "pdf", 2048)
+        doc = crud.create_document(db, ctx["DocumentCreate"](store_id=store.id, filename="test.pdf", file_type="pdf", file_size=2048, chunk_count=0))
 
         assert doc.id is not None
         assert doc.store_id == store.id
@@ -362,10 +363,10 @@ class TestGetStoreDocuments:
             db, vector_store_create(name="docs-store", embedding_model_id=model.id)
         )
 
-        crud.create_document(db, store.id, "a.pdf", "pdf", 100)
-        crud.create_document(db, store.id, "b.txt", "txt", 200)
+        crud.create_document(db, ctx["DocumentCreate"](store_id=store.id, filename="a.pdf", file_type="pdf", file_size=100, chunk_count=0))
+        crud.create_document(db, ctx["DocumentCreate"](store_id=store.id, filename="b.txt", file_type="txt", file_size=200, chunk_count=0))
 
-        docs = crud.get_store_documents(db, store.id)
+        docs = crud.get_documents(db, store.id)
 
         assert len(docs) == 2
         filenames = [d.filename for d in docs]
@@ -386,5 +387,84 @@ class TestGetStoreDocuments:
             db, vector_store_create(name="empty-store", embedding_model_id=model.id)
         )
 
-        docs = crud.get_store_documents(db, store.id)
+        docs = crud.get_documents(db, store.id)
         assert docs == []
+
+
+class TestDeleteDocument:
+    """Tests for delete_document()."""
+
+    def test_deletes_existing_document(self, test_db_with_crud, monkeypatch):
+        """Deletes document successfully."""
+        ctx = test_db_with_crud
+        crud = ctx["crud"]
+        db = ctx["db"]
+        model = ctx["model"]
+        monkeypatch.setattr(crud, "DATA_DIR", ctx["temp_dir"])
+
+        store = crud.create_store(
+            db, ctx["VectorStoreCreate"](name="test-store", embedding_model_id=model.id)
+        )
+        doc = crud.create_document(
+            db, ctx["DocumentCreate"](
+                store_id=store.id, filename="test.txt", 
+                file_type="txt", file_size=100, chunk_count=5
+            )
+        )
+
+        result = crud.delete_document(db, doc.id)
+
+        assert result is True
+        assert crud.get_document(db, doc.id) is None
+
+    def test_returns_false_when_not_found(self, test_db_with_crud):
+        """Returns False when document doesn't exist."""
+        db = test_db_with_crud["db"]
+        crud_module = test_db_with_crud["crud"]
+
+        result = crud_module.delete_document(db, 999)
+        assert result is False
+
+
+class TestUpdateStoreStats:
+    """Tests for update_store_stats()."""
+
+    def test_updates_document_and_chunk_counts(self, test_db_with_crud, monkeypatch):
+        """Updates store statistics based on documents."""
+        ctx = test_db_with_crud
+        crud = ctx["crud"]
+        db = ctx["db"]
+        model = ctx["model"]
+        monkeypatch.setattr(crud, "DATA_DIR", ctx["temp_dir"])
+
+        store = crud.create_store(
+            db, ctx["VectorStoreCreate"](name="stats-store", embedding_model_id=model.id)
+        )
+
+        # Create documents with different chunk counts
+        crud.create_document(
+            db, ctx["DocumentCreate"](
+                store_id=store.id, filename="doc1.txt",
+                file_type="txt", file_size=100, chunk_count=5
+            )
+        )
+        crud.create_document(
+            db, ctx["DocumentCreate"](
+                store_id=store.id, filename="doc2.txt",
+                file_type="txt", file_size=200, chunk_count=10
+            )
+        )
+
+        crud.update_store_stats(db, store.id)
+
+        updated_store = crud.get_store(db, store.id)
+        assert updated_store.document_count == 2
+        assert updated_store.chunk_count == 15
+
+    def test_no_error_when_store_not_found(self, test_db_with_crud):
+        """No error when store doesn't exist."""
+        db = test_db_with_crud["db"]
+        crud_module = test_db_with_crud["crud"]
+
+        # Should not raise
+        crud_module.update_store_stats(db, 999)

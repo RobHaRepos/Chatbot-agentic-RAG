@@ -1,8 +1,3 @@
-"""Integration tests for retriever API endpoints.
-
-These tests run against a live retriever service and are skipped when the service is not running.
-Start the service with: docker compose up retriever -d
-"""
 import pytest
 import requests
 
@@ -63,7 +58,7 @@ class TestStoresCRUDIntegration:
             assert get_resp.status_code == 200
             assert get_resp.json()["id"] == store_id
 
-            update_resp = requests.put(
+            update_resp = requests.patch(
                 f"{BASE_URL}/stores/{store_id}",
                 json={"name": "updated-integration-store", "description": "Updated"},
                 timeout=5,

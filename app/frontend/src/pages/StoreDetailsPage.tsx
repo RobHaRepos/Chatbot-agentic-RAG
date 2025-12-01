@@ -1,103 +1,146 @@
-import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Database, ArrowLeft, FileText, Cpu, Hash } from 'lucide-react';
-import { LoadingState, ErrorState } from '@/components/common';
+import { Database, ArrowLeft, FileText, Cpu, Hash, Upload, Trash2 } from 'lucide-react';
+import { IconLabel } from '@/components/ui/icon-label';
+import { ErrorState } from '@/components/common';
+import { SkeletonCard } from '@/components/common/SkeletonCard';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { PageContent } from '@/components/layout/PageContent';
 import { RetrievalTestPanel } from '@/components/retrieval';
-import { getStore } from '@/services/retrieverApi';
-import type { VectorStore } from '@/types/vectorStore';
+import { StoreStatusToggle } from '@/components/vector-stores/StoreStatusToggle';
+import { UploadDocumentsModal } from '@/components/vector-stores/UploadDocumentsModal';
+import { CreateDocumentDialog } from '@/components/vector-stores/CreateDocumentDialog';
+import { DeleteStoreDialog } from '@/components/vector-stores/DeleteStoreDialog';
+import { DocumentList } from '@/components/vector-stores/DocumentList';
+import { useStore } from '@/hooks/useVectorStores';
+import { useModal } from '@/hooks/useModal';
+
+// Loading state configuration
+const SKELETON_CARD_COUNT = 3; // Matches info card count: Documents, Chunks, Embedding Model
 
 export function StoreDetailsPage() {
   const { storeId } = useParams<{ storeId: string }>();
   const navigate = useNavigate();
+  const id = storeId ? Number.parseInt(storeId) : 0;
+  
+  // React Query hook
+  const { data: store, isLoading, error, refetch } = useStore(id);
+  
+  // Modal states - FIXED: Using useModal hook instead of duplicate useState
+  const uploadModal = useModal();
+  const createDocumentDialog = useModal();
+  const deleteDialog = useModal();
 
-  const [store, setStore] = useState<VectorStore | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (storeId) {
-      loadStore(Number.parseInt(storeId));
-    }
-  }, [storeId]);
-
-  const loadStore = async (id: number) => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await getStore(id);
-      setStore(data);
-    } catch {
-      setError('Failed to load store details');
-    } finally {
-      setLoading(false);
+  const handleUploadModalChange = (open: boolean) => {
+    uploadModal.setOpen(open);
+    // Reload store when modal closes to update document count
+    if (!open) {
+      refetch();
     }
   };
 
-  if (loading) {
+  const handleCreateDocumentDialogChange = (open: boolean) => {
+    createDocumentDialog.setOpen(open);
+    // Reload store when dialog closes to update document count
+    if (!open) {
+      refetch();
+    }
+  };
+
+  const handleDeleted = () => {
+    navigate('/vectorstores');
+  };
+
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <LoadingState message="Loading store details..." />
+      <div className="flex flex-col h-full">
+        <PageHeader 
+          title="Store Details"
+          icon={<Database className="h-6 w-6 text-primary" />}
+        />
+        <PageContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {Array.from({ length: SKELETON_CARD_COUNT }, () => crypto.randomUUID()).map((id) => (
+              <SkeletonCard key={id} />
+            ))}
+          </div>
+        </PageContent>
       </div>
     );
   }
 
   if (error || !store) {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-4">
-        <ErrorState
-          message={error || 'Store not found'}
-          onRetry={storeId ? () => loadStore(Number.parseInt(storeId)) : undefined}
+      <div className="flex flex-col h-full">
+        <PageHeader
+          title="Store Details"
+          backButton={
+            <Button variant="ghost" size="sm" onClick={() => navigate('/vectorstores')}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Stores
+            </Button>
+          }
         />
-        <Button variant="outline" onClick={() => navigate('/vectorstores')}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Stores
-        </Button>
+        <div className="flex items-center justify-center flex-1 p-6">
+          <ErrorState
+            message={error instanceof Error ? error.message : 'Store not found'}
+            onRetry={() => refetch()}
+          />
+        </div>
       </div>
     );
   }
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="border-b border-border bg-card/30 backdrop-blur-sm px-6 py-4">
-        <div className="max-w-6xl mx-auto">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="mb-2"
-            onClick={() => navigate('/vectorstores')}
-          >
+      <PageHeader
+        title={store.name}
+        description={store.description || undefined}
+        icon={<Database className="h-6 w-6 text-primary" />}
+        backButton={
+          <Button variant="ghost" size="sm" onClick={() => navigate('/vectorstores')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Stores
           </Button>
-          <div className="flex items-center gap-3">
-            <Database className="h-6 w-6 text-primary" />
-            <div>
-              <h1 className="text-2xl font-bold">{store.name}</h1>
-              {store.description && (
-                <p className="text-sm text-muted-foreground">{store.description}</p>
-              )}
-            </div>
-            <Badge variant={store.is_active ? 'default' : 'secondary'} className="ml-auto">
-              {store.is_active ? 'Active' : 'Inactive'}
-            </Badge>
-          </div>
-        </div>
-      </div>
+        }
+        actions={
+          <>
+            <StoreStatusToggle
+              storeId={store.id}
+              storeName={store.name}
+              isActive={store.is_active}
+            />
+            <Button variant="outline" size="sm" onClick={createDocumentDialog.open}>
+              <FileText className="h-4 w-4 mr-2" />
+              Create Document
+            </Button>
+            <Button variant="outline" size="sm" onClick={uploadModal.open}>
+              <Upload className="h-4 w-4 mr-2" />
+              Upload Files
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              onClick={deleteDialog.open}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete Store
+            </Button>
+          </>
+        }
+      />
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-6xl mx-auto space-y-6">
-          {/* Store Info Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <PageContent>
+        {/* Store Info Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card>
               <CardHeader className="pb-2">
-                <CardDescription className="flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
-                  Documents
+                <CardDescription>
+                  <IconLabel icon={<FileText className="h-4 w-4" />} gap="sm">
+                    Documents
+                  </IconLabel>
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -106,9 +149,10 @@ export function StoreDetailsPage() {
             </Card>
             <Card>
               <CardHeader className="pb-2">
-                <CardDescription className="flex items-center gap-2">
-                  <Hash className="h-4 w-4" />
-                  Chunks
+                <CardDescription>
+                  <IconLabel icon={<Hash className="h-4 w-4" />} gap="sm">
+                    Chunks
+                  </IconLabel>
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -117,9 +161,10 @@ export function StoreDetailsPage() {
             </Card>
             <Card>
               <CardHeader className="pb-2">
-                <CardDescription className="flex items-center gap-2">
-                  <Cpu className="h-4 w-4" />
-                  Embedding Model
+                <CardDescription>
+                  <IconLabel icon={<Cpu className="h-4 w-4" />} gap="sm">
+                    Embedding Model
+                  </IconLabel>
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -133,10 +178,44 @@ export function StoreDetailsPage() {
             </Card>
           </div>
 
-          {/* Retrieval Test - Using Reusable Component */}
-          <RetrievalTestPanel storeId={store.id} />
-        </div>
-      </div>
+        {/* Retrieval Test - Using Reusable Component */}
+        <RetrievalTestPanel storeId={store.id} />
+
+        {/* Document Management */}
+        <Card>
+          <CardHeader>
+            <CardDescription>
+              <IconLabel icon={<FileText className="h-4 w-4" />} gap="sm">
+                Documents
+              </IconLabel>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <DocumentList storeId={store.id} />
+          </CardContent>
+        </Card>
+      </PageContent>
+
+      {/* Modals */}
+      <CreateDocumentDialog
+        open={createDocumentDialog.isOpen}
+        onOpenChange={handleCreateDocumentDialogChange}
+        storeId={store.id}
+        storeName={store.name}
+      />
+      <UploadDocumentsModal
+        open={uploadModal.isOpen}
+        onOpenChange={handleUploadModalChange}
+        storeId={store.id}
+        storeName={store.name}
+      />
+      <DeleteStoreDialog
+        open={deleteDialog.isOpen}
+        onOpenChange={deleteDialog.setOpen}
+        storeId={store.id}
+        storeName={store.name}
+        onDeleted={handleDeleted}
+      />
     </div>
   );
 }

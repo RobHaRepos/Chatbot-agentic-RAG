@@ -24,6 +24,21 @@ def test_dummy_vector_store_init():
     assert ds.index.ntotal == 10
 
 
+def test_dummy_vector_store_with_custom_ntotal():
+    """DummyVectorStore can be initialized with custom ntotal value."""
+    ds = DummyVectorStore(ntotal=25)
+    assert ds.index.ntotal == 25
+
+
+def test_dummy_vector_store_as_retriever():
+    """DummyVectorStore.as_retriever returns a retriever that can invoke queries."""
+    ds = DummyVectorStore()
+    retriever = ds.as_retriever()
+    result = retriever.invoke("test query")
+    assert isinstance(result, list)
+    assert len(result) == 0
+
+
 def test_faiss_load_local_success(monkeypatch):
     """FAISS.load_local returns a vector store when successful."""
     monkeypatch.setattr(
@@ -75,6 +90,30 @@ def _mocked_vector_store(ntotal=3):
     return FakeVectorStore()
 
 
+def test_mocked_vector_store_has_correct_ntotal():
+    """_mocked_vector_store creates a vector store with specified ntotal."""
+    vs = _mocked_vector_store(ntotal=7)
+    assert vs.index.ntotal == 7
+
+
+def test_mocked_vector_store_retriever_get_documents():
+    """_mocked_vector_store retriever can call get_documents."""
+    vs = _mocked_vector_store()
+    retriever = vs.as_retriever()
+    docs = retriever.get_documents()
+    assert isinstance(docs, list)
+    assert len(docs) == 0
+
+
+def test_mocked_vector_store_retriever_invoke():
+    """_mocked_vector_store retriever can invoke queries."""
+    vs = _mocked_vector_store()
+    retriever = vs.as_retriever()
+    result = retriever.invoke("test query")
+    assert isinstance(result, list)
+    assert len(result) == 0
+
+
 def test_fastapi_startup_monkeypatch(monkeypatch):
     """FastAPI startup attaches a vector_store with expected .index.ntotal value."""
     from fastapi.testclient import TestClient
@@ -96,5 +135,5 @@ def test_fastapi_startup_monkeypatch(monkeypatch):
         response = client.get("/health")
         assert response.status_code == 200
         assert response.json() == {"status": "ok"}
-        assert hasattr(retriever, "vector_store")
-        assert retriever.vector_store.index.ntotal == 5
+        # vector_store removed in refactoring - embeddings loaded instead
+        assert hasattr(retriever, "embeddings")

@@ -1,1 +1,0 @@
-export { StoreCard } from './StoreCard';

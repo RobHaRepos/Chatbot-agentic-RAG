@@ -1,31 +1,34 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Settings as SettingsIcon } from 'lucide-react';
+import { IconLabel } from '@/components/ui/icon-label';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { PageContent } from '@/components/layout/PageContent';
 
 export function SettingsPage() {
   return (
     <div className="flex flex-col h-full">
-      <div className="border-b border-border bg-card/30 backdrop-blur-sm px-6 py-4">
-        <div className="max-w-6xl mx-auto">
-          <h1 className="text-2xl font-bold">Settings</h1>
-          <p className="text-sm text-muted-foreground">
-            Configure your application
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Settings"
+        description="Configure your application"
+        icon={<SettingsIcon className="h-6 w-6 text-primary" />}
+      />
 
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-6xl mx-auto">
+      <PageContent>
           <Card>
             <CardHeader>
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                  <SettingsIcon className="h-6 w-6" />
-                </div>
+              <IconLabel 
+                icon={
+                  <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                    <SettingsIcon className="h-6 w-6" />
+                  </div>
+                } 
+                gap="md"
+              >
                 <div>
                   <CardTitle>Settings</CardTitle>
                   <CardDescription>Coming Soon</CardDescription>
                 </div>
-              </div>
+              </IconLabel>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
@@ -40,8 +43,7 @@ export function SettingsPage() {
               </ul>
             </CardContent>
           </Card>
-        </div>
-      </div>
+      </PageContent>
     </div>
   );
 }
