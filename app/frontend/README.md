@@ -31,7 +31,7 @@ npm install
 npm run dev
 ```
 
-The app will be available at `http://localhost:3000`.
+The app will be available at `http://localhost:5173` (Vite default).
 
 ### Build for Production
 
@@ -74,9 +74,10 @@ src/
 ## Features
 
 - **Chat Interface**: Real-time chat with AI assistant
-- **Text-to-Speech**: Convert bot responses to speech
-- **Vector Store Management**: UI for managing document vector stores (coming soon)
-- **Settings**: Application configuration (coming soon)
+- **Text-to-Speech**: Convert bot responses to speech with Kokoro TTS
+- **Vector Store Management**: Create stores, upload documents (.txt, .md), manage embeddings
+- **Document Management**: Update content/filenames, delete documents, view chunks
+- **Retrieval Testing**: Test search queries with configurable k parameter
 - **Responsive Design**: Mobile-friendly interface
 - **Dark Mode**: Built-in dark theme
 

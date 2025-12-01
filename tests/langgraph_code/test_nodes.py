@@ -13,10 +13,12 @@ from app.langgraph_code.nodes import (
 
 @pytest.fixture
 def state_factory():
-    def _create(question: str, k: int = 3, **kwargs) -> OverallState:
+    def _create(question: str, k: int = 3, store_id: int = 1, **kwargs) -> OverallState:
         payload: dict[str, Any] = {
             "question": question,
+            "query": question,
             "k": k,
+            "store_id": store_id,
             "action": None,
             "context": None,
             "answer": None,
@@ -63,7 +65,8 @@ async def test_node_retrieve_string(monkeypatch, state_factory):
     state = state_factory(
         question="What is the newest Iphone?",
         query="What is the newest Iphone?",
-        k=3
+        k=3,
+        store_id=1
     )
         
     result = await node_retrieve_string(state)
@@ -73,6 +76,21 @@ async def test_node_retrieve_string(monkeypatch, state_factory):
     docs_text = result["documents"]
     assert "DOC_A" in docs_text
     assert "DOC_B" in docs_text
+
+@pytest.mark.anyio
+async def test_node_retrieve_string_no_store_id(state_factory):
+    """node_retrieve_string returns clarify action when no store_id is provided."""
+    state = state_factory(
+        question="What is the newest Iphone?",
+        query="What is the newest Iphone?",
+        k=3,
+        store_id=None  # No store_id
+    )
+        
+    result = await node_retrieve_string(state)
+    assert isinstance(result, dict)
+    assert result["action"] == "clarify"
+    assert result["documents"] == ""
         
 @pytest.mark.anyio
 async def test_node_retrieve_or_respond_retrieve(monkeypatch, state_factory):

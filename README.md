@@ -10,9 +10,9 @@ A microservices-based RAG chatbot using LangGraph for workflow orchestration, FA
 
 **Services:**
 - **Workflow** (port 8000): LangGraph-based orchestration with `/run` and `/tts` endpoints
-- **Retriever** (port 8001): FAISS vector search with sentence-transformers embeddings
+- **Retriever** (port 8001): FAISS vector search with multi-store support, document management, and configurable chunking
 - **LLM** (port 8002): ChatOpenAI wrapper for answer generation and retrieval decisions
-- **Frontend** (port 8003): Static HTML/JS UI with TTS playback
+- **Frontend** (port 8003): React SPA with TTS, vector store management, and document upload
 - **Logger** (port 8004): Centralized log collection with SSE streaming
 - **TTS** (port 8005): External Kokoro TTS service (optional)
 
@@ -46,8 +46,13 @@ app/
 │   ├── wf_api.py        # Main FastAPI app
 │   └── tts_api.py       # TTS proxy endpoint
 ├── llm/                 # LLM service
-├── rag/                 # Retriever service  
-├── frontend/            # Static UI
+├── rag/src/             # Retriever service (refactored)
+│   ├── retriever.py     # FastAPI endpoints
+│   ├── constants.py     # Configuration constants
+│   ├── faiss_utils.py   # FAISS operations & utilities
+│   ├── crud.py          # Database operations
+│   └── database.py      # SQLAlchemy models
+├── frontend/            # React SPA with TypeScript
 └── logger_service/      # Centralized logging
 tests/                   # Unit & integration tests
 docker-compose.yml       # Service orchestration
@@ -75,7 +80,14 @@ The LLM maintains a `context` summary across iterations to track gathered inform
 - `POST /generate_answer` - Generate final answer
 
 **Retriever Service** (`/`)
-- `POST /retrieve_documents_string` - FAISS search
+- `POST /stores/retrieve_string` - FAISS search (legacy)
+- `POST /stores/{store_id}/retrieve` - FAISS search with metadata
+- `GET /stores` - List vector stores
+- `POST /stores` - Create new vector store
+- `POST /stores/{store_id}/upload` - Upload documents
+- `GET /stores/{store_id}/documents` - List documents
+- `PATCH /stores/{store_id}/documents/{doc_id}` - Update document
+- `DELETE /stores/{store_id}/documents/{doc_id}` - Delete document
 
 **Logger Service** (`/`)
 - `POST /logs` - Submit logs
@@ -85,7 +97,9 @@ The LLM maintains a `context` summary across iterations to track gathered inform
 
 **Environment Variables:**
 - `OPENAI_API_KEY` - Required for LLM service
-- `PATH_TO_FAISS_INDEX` - Path to FAISS index directory
+- `PATH_TO_FAISS_INDEX` - Default FAISS index directory (store 1)
+- `CHUNK_SIZE`, `CHUNK_OVERLAP` - Document chunking config (defaults: 4000, 800)
+- `MODEL_NAME_EMBEDDING` - HuggingFace embedding model (default: sentence-transformers/all-MiniLM-L6-v2)
 - `LANGGRAPH_LLM_API_URL` - LLM service URL (default: `http://localhost:8002`)
 - `LANGGRAPH_RETRIEVER_API_URL` - Retriever URL (default: `http://localhost:8001`)
 - `TTS_SERVICE_URL` - TTS service URL (default: `http://tts_service:8005`)

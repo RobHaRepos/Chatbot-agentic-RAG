@@ -18,3 +18,5 @@ dist
 build
 README.md
 .github
+data/
+data/*

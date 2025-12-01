@@ -11,6 +11,7 @@ class OverallState(TypedDict):
     question: str
     query: str
     k: Optional[int]
+    store_id: Optional[int]  # Vector store to query
     action: Optional[str]
     context: Optional[str]
     answer: Optional[str]
@@ -33,12 +34,13 @@ def action_router(state: OverallState):
     return END
 
 
-def initial_state(question: str, k: Optional[int] = None) -> OverallState:
+def initial_state(question: str, k: Optional[int] = None, store_id: Optional[int] = None) -> OverallState:
     """Create a fresh OverallState for each run of the workflow."""
     return {
         "question": question,
         "query": question,
         "k": k,
+        "store_id": store_id,
         "action": None,
         "context": "",
         "answer": "",

@@ -1,14 +1,18 @@
+import { memo } from 'react';
 import { Message } from '@/types/chat';
-import { cn } from '@/lib/utils';
-import { formatDate } from '@/utils/helpers';
+import { cn, formatDate } from '@/lib/utils';
 import { TTSButton } from './TTSButton';
 import { Loader2 } from 'lucide-react';
+import { IconLabel } from '@/components/ui/icon-label';
 
 interface MessageItemProps {
   readonly message: Message;
 }
 
-export function MessageItem({ message }: Readonly<MessageItemProps>) {
+/**
+ * FIXED: Memoized to prevent re-renders when other messages change
+ */
+export const MessageItem = memo(function MessageItem({ message }: Readonly<MessageItemProps>) {
   const isUser = message.sender === 'user';
 
   return (
@@ -45,9 +49,10 @@ export function MessageItem({ message }: Readonly<MessageItemProps>) {
 
         <div className="text-sm whitespace-pre-wrap break-words">
           {message.isLoading ? (
-            <output className="flex items-center gap-2" aria-label="Loading response">
-              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-              <span>Thinking...</span>
+            <output aria-label="Loading response">
+              <IconLabel icon={<Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />} gap="sm">
+                <span>Thinking...</span>
+              </IconLabel>
             </output>
           ) : (
             message.text
@@ -56,4 +61,4 @@ export function MessageItem({ message }: Readonly<MessageItemProps>) {
       </div>
     </article>
   );
-}
+});

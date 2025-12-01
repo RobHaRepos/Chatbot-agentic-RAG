@@ -1,5 +1,13 @@
 import axios from 'axios';
-import { getTTSUrl } from '@/utils/helpers';
+import { getTTSUrl } from '@/lib/utils';
+
+// Create a dedicated axios instance for TTS API
+const ttsApi = axios.create({
+  baseURL: getTTSUrl(),
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
 export interface TTSRequest {
   readonly text: string;
@@ -18,13 +26,8 @@ export const generateSpeech = async (
     ...(speed !== undefined && { speed }),
   };
 
-  const response = await axios.post(
-    getTTSUrl(),
-    request,
-    {
-      headers: { 'Content-Type': 'application/json' },
-      responseType: 'blob',
-    }
-  );
+  const response = await ttsApi.post('', request, {
+    responseType: 'blob',
+  });
   return response.data;
 };

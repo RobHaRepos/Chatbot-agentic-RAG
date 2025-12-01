@@ -43,11 +43,12 @@ def ready_check():
 class RunRequest(BaseModel):
     question: str
     k: Optional[int] = None
+    store_id: Optional[int] = None  # Vector store to query
 
 @app.post("/run")
 async def run_workflow(request: RunRequest):
     graph = app.state.graph
-    state = initial_state(request.question, request.k)
+    state = initial_state(request.question, request.k, request.store_id)
     result = await graph.ainvoke(state)
     return {"result": result}
 
