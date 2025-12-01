@@ -15,10 +15,11 @@ RUN pip install --upgrade pip setuptools wheel \
     && useradd -u 1000 -g appuser -m -d /home/appuser -s /bin/sh appuser \
     && chown -R appuser:appuser /app
 
+COPY --chown=appuser:appuser app /app/app
+RUN chmod -R a-w /app/app
+
 ENV HOME=/home/appuser PYTHONUNBUFFERED=1
 USER appuser
-
-COPY --chown=appuser:appuser app /app/app
 
 ENV PORT=8001
 EXPOSE 8001
