@@ -15,8 +15,10 @@ RUN pip install --upgrade pip setuptools wheel \
     && useradd -u 1000 -g appuser -m -d /home/appuser -s /bin/sh appuser \
     && chown -R appuser:appuser /app
 
-COPY --chown=appuser:appuser app /app/app
-RUN chmod -R a-w /app/app
+COPY app /app/app
+RUN chown -R root:root /app/app \
+    && chmod -R a-w /app/app \
+    && chown -R appuser:appuser /app/data/stores
 
 ENV HOME=/home/appuser PYTHONUNBUFFERED=1
 USER appuser
