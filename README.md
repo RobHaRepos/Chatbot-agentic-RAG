@@ -14,7 +14,7 @@ A microservices-based RAG chatbot using LangGraph for workflow orchestration, FA
 - **LLM** (port 8002): ChatOpenAI wrapper for answer generation and retrieval decisions
 - **Frontend** (port 8003): React SPA with TTS, vector store management, and document upload
 - **Logger** (port 8004): Centralized log collection with SSE streaming
-- **TTS** (port 8005): External Kokoro TTS service (optional)
+- **TTS** (port 8005): External Kokoro TTS service (optional) - [TTS_kokoro](https://github.com/RobHaRepos/TTS_kokoro.git)
 
 ![LangGraph state graph](out/stategraph.png)
 
@@ -41,17 +41,17 @@ Access the UI at `http://localhost:8003`
 ```
 app/
 ├── langgraph_code/      # Workflow orchestration
-│   ├── workflow.py      # LangGraph state machine
-│   ├── nodes.py         # Node implementations
-│   ├── wf_api.py        # Main FastAPI app
-│   └── tts_api.py       # TTS proxy endpoint
+│   └── src/
+│       ├── workflow.py  # LangGraph state machine
+│       ├── nodes.py     # Node implementations
+│       ├── wf_api.py    # Main FastAPI app
+│       └── tts_api.py   # TTS proxy endpoint
 ├── llm/                 # LLM service
-├── rag/src/             # Retriever service (refactored)
+├── retriever/src/       # Retriever service
 │   ├── retriever.py     # FastAPI endpoints
-│   ├── constants.py     # Configuration constants
-│   ├── faiss_utils.py   # FAISS operations & utilities
-│   ├── crud.py          # Database operations
-│   └── database.py      # SQLAlchemy models
+│   ├── crud.py          # Database CRUD operations
+│   ├── database.py      # SQLAlchemy models & templates
+│   └── faiss_utils.py   # FAISS operations
 ├── frontend/            # React SPA with TypeScript
 └── logger_service/      # Centralized logging
 tests/                   # Unit & integration tests
@@ -80,14 +80,11 @@ The LLM maintains a `context` summary across iterations to track gathered inform
 - `POST /generate_answer` - Generate final answer
 
 **Retriever Service** (`/`)
-- `POST /stores/retrieve_string` - FAISS search (legacy)
-- `POST /stores/{store_id}/retrieve` - FAISS search with metadata
-- `GET /stores` - List vector stores
-- `POST /stores` - Create new vector store
-- `POST /stores/{store_id}/upload` - Upload documents
-- `GET /stores/{store_id}/documents` - List documents
-- `PATCH /stores/{store_id}/documents/{doc_id}` - Update document
-- `DELETE /stores/{store_id}/documents/{doc_id}` - Delete document
+- `POST /stores/{store_id}/retrieve` - FAISS semantic search
+- `GET/POST/PATCH/DELETE /stores` - Vector store CRUD
+- `POST /stores/{store_id}/upload` - Upload documents (.txt, .md)
+- `GET/PATCH/DELETE /stores/{store_id}/documents/{doc_id}` - Document management
+- `GET/POST/PATCH/DELETE /templates` - Prompt template management
 
 **Logger Service** (`/`)
 - `POST /logs` - Submit logs
@@ -120,9 +117,9 @@ pytest --cov=.            # With coverage
 pip install -r requirements.txt
 
 # Run services individually
-uvicorn app.rag.retriever:app --port 8001
-uvicorn app.llm.llm_api:app --port 8002
-uvicorn app.langgraph_code.wf_api:app --port 8000
+uvicorn app.retriever.src.retriever:app --port 8001
+uvicorn app.llm.src.llm_api:app --port 8002
+uvicorn app.langgraph_code.src.wf_api:app --port 8000
 ```
 
 ## CI/CD & Security

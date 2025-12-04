@@ -1,14 +1,16 @@
 import io
 import os
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+
+import httpx
 import pytest
 import soundfile
-from pathlib import Path
-from unittest.mock import patch, MagicMock
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from tests.rag.test_retriever import _service_up
-from app.langgraph_code import tts_api
-import httpx
+
+from app.langgraph_code.src import tts_api
+from tests.retriever.test_retriever import _service_up
 
 SAMPLE_RATE_TTS = int(os.getenv("SAMPLE_RATE_TTS", "24000"))
 TEST_TTS_URL = os.getenv("TTS_SERVICE_URL", "http://localhost:8005")

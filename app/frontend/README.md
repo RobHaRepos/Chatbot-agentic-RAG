@@ -74,11 +74,11 @@ src/
 ## Features
 
 - **Chat Interface**: Real-time chat with AI assistant
-- **Text-to-Speech**: Convert bot responses to speech with Kokoro TTS
-- **Vector Store Management**: Create stores, upload documents (.txt, .md), manage embeddings
+- **Text-to-Speech**: Convert bot responses to speech via [Kokoro TTS](https://github.com/RobHaRepos/TTS_kokoro.git)
+- **Vector Store Management**: Create stores, upload documents, manage embeddings
+- **Prompt Templates**: Create and edit per-store LLM prompt templates
 - **Document Management**: Update content/filenames, delete documents, view chunks
 - **Retrieval Testing**: Test search queries with configurable k parameter
-- **Responsive Design**: Mobile-friendly interface
 - **Dark Mode**: Built-in dark theme
 
 ## Configuration

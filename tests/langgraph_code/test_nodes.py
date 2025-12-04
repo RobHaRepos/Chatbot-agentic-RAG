@@ -1,15 +1,17 @@
-import pytest
-from app.logger_service.handlers import HTTPLogHandler as _HTTPLogHandler
-from anyio import lowlevel
-from typing import cast, Any
 import logging
-from app.langgraph_code.workflow import OverallState
-from app.langgraph_code.nodes import (
-    node_retrieve_string,
+from typing import Any, cast
+
+import pytest
+from anyio import lowlevel
+
+from app.langgraph_code.src.nodes import (
+    node_ask_clarify,
     node_generate_answer,
     node_retrieve_or_respond,
-    node_ask_clarify,
+    node_retrieve_string,
 )
+from app.langgraph_code.src.workflow import OverallState
+from app.logger_service.handlers import HTTPLogHandler as _HTTPLogHandler
 
 @pytest.fixture
 def state_factory():
@@ -22,7 +24,6 @@ def state_factory():
             "action": None,
             "context": None,
             "answer": None,
-            "clarification": None,
             "documents": None,
             "retrieval_counter": 0,
         }
@@ -60,7 +61,7 @@ async def test_node_retrieve_string(monkeypatch, state_factory):
     fake_response = FakeResponse({"documents": "DOC_A\n\nDOC_B"})
     
     fake_client = FakeAsyncClient(fake_response)
-    monkeypatch.setattr("app.langgraph_code.nodes.httpx.AsyncClient", lambda *args, **kwargs: fake_client)
+    monkeypatch.setattr("app.langgraph_code.src.nodes.httpx.AsyncClient", lambda *args, **kwargs: fake_client)
     
     state = state_factory(
         question="What is the newest Iphone?",
@@ -90,14 +91,43 @@ async def test_node_retrieve_string_no_store_id(state_factory):
     result = await node_retrieve_string(state)
     assert isinstance(result, dict)
     assert result["action"] == "clarify"
-    assert result["documents"] == ""
+    assert "Vector store not found" in result.get("answer", "")
+
+
+@pytest.mark.anyio
+async def test_node_retrieve_or_respond_no_store_id(state_factory):
+    """node_retrieve_or_respond returns clarify action when no store_id is provided."""
+    state = state_factory(
+        question="What is the newest Iphone?",
+        store_id=None  # No store_id
+    )
+        
+    result = await node_retrieve_or_respond(state)
+    assert isinstance(result, dict)
+    assert result["action"] == "clarify"
+    assert "No vector store selected" in result.get("answer", "")
+
+
+@pytest.mark.anyio
+async def test_node_generate_answer_no_store_id(state_factory):
+    """node_generate_answer returns clarify action when no store_id is provided."""
+    state = state_factory(
+        question="What is the newest Iphone?",
+        documents="Some docs",
+        store_id=None  # No store_id
+    )
+        
+    result = await node_generate_answer(state)
+    assert isinstance(result, dict)
+    assert result["action"] == "clarify"
+    assert "No vector store selected" in result.get("answer", "")
         
 @pytest.mark.anyio
 async def test_node_retrieve_or_respond_retrieve(monkeypatch, state_factory):
     """retrieve_or_respond returns retrieve action when LLM indicates retrieval is needed."""
     fake_response_retrieve = FakeResponse({"action": "retrieve", "answer": ""})
     fake_client = FakeAsyncClient(fake_response_retrieve)
-    monkeypatch.setattr("app.langgraph_code.nodes.httpx.AsyncClient", lambda *args, **kwargs: fake_client)
+    monkeypatch.setattr("app.langgraph_code.src.nodes.httpx.AsyncClient", lambda *args, **kwargs: fake_client)
 
     state = state_factory(
         question="What is the newest Iphone?"
@@ -114,7 +144,7 @@ async def test_node_retrieve_or_respond_clarify(monkeypatch, state_factory):
     """retrieve_or_respond returns clarify action on empty/insufficient question."""
     fake_response_clarify = FakeResponse({"action": "clarify", "answer": ""})
     fake_client = FakeAsyncClient(fake_response_clarify)
-    monkeypatch.setattr("app.langgraph_code.nodes.httpx.AsyncClient", lambda *args, **kwargs: fake_client)
+    monkeypatch.setattr("app.langgraph_code.src.nodes.httpx.AsyncClient", lambda *args, **kwargs: fake_client)
 
     state = state_factory(
         question="What is the capital of France?"
@@ -130,7 +160,7 @@ async def test_node_retrieve_or_respond_fallback(monkeypatch, state_factory):
     """retrieve_or_respond falls back to clarify when the LLM returns non-JSON."""
     fake_response_fallback = FakeResponse("Non-JSON response")
     fake_client = FakeAsyncClient(fake_response_fallback)
-    monkeypatch.setattr("app.langgraph_code.nodes.httpx.AsyncClient", lambda *args, **kwargs: fake_client)
+    monkeypatch.setattr("app.langgraph_code.src.nodes.httpx.AsyncClient", lambda *args, **kwargs: fake_client)
 
     state = state_factory(
         question="What is the newest Iphone?"
@@ -147,7 +177,7 @@ class TestNodeGenerateAnswer:
         """Test generate_answer with normal input."""
         fake_response1 = FakeResponse("The newest Iphone is Iphone 15 with a new A17 chip.")
         fake_client1 = FakeAsyncClient(fake_response1)
-        monkeypatch.setattr("app.langgraph_code.nodes.httpx.AsyncClient", lambda *args, **kwargs: fake_client1)
+        monkeypatch.setattr("app.langgraph_code.src.nodes.httpx.AsyncClient", lambda *args, **kwargs: fake_client1)
 
         state = state_factory(
             question="What is the newest Iphone?",
@@ -164,7 +194,7 @@ class TestNodeGenerateAnswer:
         """Test generate_answer leading to retrieve action."""
         fake_response2 = FakeResponse({"action":"retrieve","query":"Display of the Iphone 13", "context": "Newest Iphone is Iphone 13, Released 2022"})
         fake_client2 = FakeAsyncClient(fake_response2)
-        monkeypatch.setattr("app.langgraph_code.nodes.httpx.AsyncClient", lambda *args, **kwargs: fake_client2)
+        monkeypatch.setattr("app.langgraph_code.src.nodes.httpx.AsyncClient", lambda *args, **kwargs: fake_client2)
         
         state = state_factory(
             question="What is the newest Iphone?",
@@ -188,7 +218,7 @@ class TestNodeGenerateAnswer:
         # state of retriever_counter = 3
         fake_response6 = FakeResponse({"action":"retrieve","query":"Display of the Iphone 13", "context": "Newest Iphone is Iphone 13, Released 2022"})
         fake_client6 = FakeAsyncClient(fake_response6)
-        monkeypatch.setattr("app.langgraph_code.nodes.httpx.AsyncClient", lambda *args, **kwargs: fake_client6)
+        monkeypatch.setattr("app.langgraph_code.src.nodes.httpx.AsyncClient", lambda *args, **kwargs: fake_client6)
 
         state = state_factory(
             question="What is the newest Iphone?",
@@ -205,16 +235,18 @@ class TestNodeGenerateAnswer:
 
 def test_node_ask_clarify(state_factory):
     """Test node_ask_clarify function."""
+    clarify_message = "Please clarify your question about phones."
     state = state_factory(
-        question="What is the capital of France?"
+        question="What is the capital of France?",
+        answer=clarify_message
     )
 
     result = node_ask_clarify(state)
     assert isinstance(result, dict)
     assert "answer" in result
-    assert "The query seems to be unrelated to phones. Could you be more specific? Which phone model or what detail do you mean (brand/model/specs/price)?" in result["answer"]
+    assert result["answer"] == clarify_message
     assert "action" in result
-    assert "clarify" in result["action"]
+    assert result["action"] == "clarify"
 
 
 def test_nodes_attach_http_handler():

@@ -27,4 +27,4 @@ ENV HOME=/home/appuser PYTHONUNBUFFERED=1
 
 USER appuser
 
-CMD ["python", "-m", "uvicorn", "app.llm.llm_api:app", "--host", "0.0.0.0", "--port", "8002", "--workers", "1"]
+CMD ["python", "-m", "uvicorn", "app.llm.src.llm_api:app", "--host", "0.0.0.0", "--port", "8002", "--workers", "1"]

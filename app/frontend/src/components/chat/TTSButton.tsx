@@ -35,14 +35,15 @@ export function TTSButton({ text, disabled }: Readonly<TTSButtonProps>) {
     try {
       const blob = await generateSpeech(text, voice, speed);
       setIsPlaying(true);
-      
+      // Playback has started; clear loading so the button becomes clickable to stop
+      setIsLoading(false);
       await play(blob);
-      
       setIsPlaying(false);
     } catch (err) {
       handleError(err, ...ERROR_TEMPLATES.TTS_GENERATE(text, voice, speed));
       setIsPlaying(false);
     } finally {
+      // Ensure loading flag is cleared in any case (e.g., generation failure)
       setIsLoading(false);
     }
   };

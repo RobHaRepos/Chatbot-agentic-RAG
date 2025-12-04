@@ -19,7 +19,7 @@ services:
   retriever:
     build:
       context: .
-      dockerfile: app/rag/Dockerfile
+      dockerfile: app/retriever/Dockerfile
     image: "${RETRIEVER_IMAGE:-chatbot_retriever:latest}"
     env_file:
       - .env
@@ -57,10 +57,12 @@ services:
       OPENAI_API_KEY: "${OPENAI_API_KEY}"
       MAX_TOKENS: "${MAX_TOKENS:-400}"
       TEMPERATURE_LLM: "${TEMPERATURE_LLM:-0.0}"
+      RETRIEVER_SERVICE_URL: "http://retriever:8001"
       LOGGER_SERVICE_URL: "http://logger_service:8004"
       SERVICE_NAME: "llm"
     depends_on:
       - logger_service
+      - retriever
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8002/health || exit 1"]
       interval: 55s

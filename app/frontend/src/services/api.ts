@@ -12,6 +12,7 @@ import type {
   RetrievalResponse 
 } from '@/types/vectorStore';
 import type { ChatRequest, ChatResponse } from '@/types/chat';
+import type { Template, TemplateCreate, TemplateUpdate } from '@/types/template';
 
 // Base URL for chat/workflow API
 const api = axios.create({
@@ -125,6 +126,35 @@ export const retrieveChunks = retrieveFromStore;
 export const sendMessage = async (request: ChatRequest): Promise<ChatResponse> => {
   const response = await api.post<ChatResponse>('', request);
   return response.data;
+};
+
+// ======= Templates =======
+export const fetchTemplates = async (storeId?: number): Promise<Template[]> => {
+  const params = storeId ? { store_id: storeId } : {};
+  const response = await retrieverApi.get<Template[]>('/templates', { params });
+  return response.data;
+};
+
+export const fetchTemplate = async (templateId: number): Promise<Template> => {
+  const response = await retrieverApi.get<Template>(`/templates/${templateId}`);
+  return response.data;
+};
+
+export const createTemplate = async (data: TemplateCreate): Promise<Template> => {
+  const response = await retrieverApi.post<Template>('/templates', data);
+  return response.data;
+};
+
+export const updateTemplate = async (
+  templateId: number,
+  data: TemplateUpdate
+): Promise<Template> => {
+  const response = await retrieverApi.patch<Template>(`/templates/${templateId}`, data);
+  return response.data;
+};
+
+export const deleteTemplate = async (templateId: number): Promise<void> => {
+  await retrieverApi.delete(`/templates/${templateId}`);
 };
 
 export default api;

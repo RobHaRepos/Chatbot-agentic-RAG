@@ -1,8 +1,8 @@
 import os
 import pytest
 from fastapi.testclient import TestClient
-from app.langgraph_code.wf_api import app
-from tests.rag.test_retriever import _service_up
+from app.langgraph_code.src.wf_api import app
+from tests.retriever.test_retriever import _service_up
 
 # Default store_id for integration tests - assumes store ID 1 exists
 DEFAULT_STORE_ID = 1
@@ -64,6 +64,3 @@ def test_run_workflow_no_question():
         assert r.status_code == 200
         result = r.json()
         assert "result" in result
-        assert "The query seems to be unrelated to phones. Could you be more specific? Which phone model or what detail do you mean (brand/model/specs/price)?" in result["result"].get("answer", "")
-        
-        

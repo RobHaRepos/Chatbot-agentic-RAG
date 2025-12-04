@@ -1,5 +1,6 @@
 import logging
 import queue
+import sys
 import threading
 import os
 import requests
@@ -52,8 +53,8 @@ class HTTPLogHandler(logging.Handler):
 
                 r = session.post(endpoint, json=payload, timeout=self.timeout)
                 if not (200 <= r.status_code < 300):
-                    print(f"Failed to send log to central logger, status={r.status_code}: {payload}")
+                    sys.stderr.write(f"Failed to send log to central logger, status={r.status_code}: {payload}\n")
             except Exception:
-                print("Failed to send log to central logger: ", payload)
+                sys.stderr.write(f"Failed to send log to central logger: {payload}\n")
             finally:
                 self._queue.task_done()

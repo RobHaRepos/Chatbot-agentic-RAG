@@ -21,20 +21,34 @@ export function useAudioPlayback() {
     const audio = new Audio(url);
 
     return new Promise((resolve, reject) => {
-      audio.onended = () => {
-        URL.revokeObjectURL(url);
+      let settled = false;
+
+      const cleanupAndResolve = () => {
+        if (settled) return;
+        settled = true;
+        try {
+          URL.revokeObjectURL(url);
+        } catch {}
         audioRef.current = null;
         resolve();
       };
 
-      audio.onerror = () => {
-        URL.revokeObjectURL(url);
+      const cleanupAndReject = (err: Error) => {
+        if (settled) return;
+        settled = true;
+        try {
+          URL.revokeObjectURL(url);
+        } catch {}
         audioRef.current = null;
-        reject(new Error('Audio playback failed'));
+        reject(err);
       };
 
+      audio.onended = cleanupAndResolve;
+      audio.onpause = cleanupAndResolve; // resolve also on manual pause/stop
+      audio.onerror = () => cleanupAndReject(new Error('Audio playback failed'));
+
       audioRef.current = audio;
-      audio.play().catch(reject);
+      audio.play().catch(cleanupAndReject);
     });
   }, []);
 

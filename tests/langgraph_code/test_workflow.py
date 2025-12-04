@@ -1,7 +1,9 @@
-from app.langgraph_code.workflow import action_router, build_workflow
-import pytest
 from types import SimpleNamespace
+
+import pytest
 from langgraph.graph import END
+
+from app.langgraph_code.src.workflow import action_router, build_workflow
 
 @pytest.fixture
 def state_factory():
@@ -13,7 +15,6 @@ def state_factory():
             "k": None,
             "context": None,
             "answer": None,
-            "clarification": None,
         }
         payload.update(kwargs)
         return SimpleNamespace(**payload)

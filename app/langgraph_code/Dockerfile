@@ -29,4 +29,4 @@ ENV HOME=/home/appuser PYTHONUNBUFFERED=1
 
 USER appuser
 
-CMD ["python", "-m", "uvicorn", "app.langgraph_code.wf_api:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers"]
+CMD ["python", "-m", "uvicorn", "app.langgraph_code.src.wf_api:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers"]

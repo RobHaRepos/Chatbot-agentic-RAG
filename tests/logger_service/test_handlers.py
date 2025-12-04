@@ -81,18 +81,12 @@ def test_worker_appends_logs_only_once(monkeypatch):
     handler._stopped.set()
     handler._worker.join(timeout=1)
 
-def test_worker_reports_non_2xx(monkeypatch):
-    """Worker should print diagnostic when the POST returns non-2xx status code."""
-    printed = []
-
-    def fake_print(*args, **kwargs):
-        printed.append(" ".join(str(a) for a in args))
-
+def test_worker_reports_non_2xx(monkeypatch, capsys):
+    """Worker should write diagnostic to stderr when the POST returns non-2xx status code."""
     def fake_post(self, url, json=None, timeout=None):
         handler._stopped.set()
         return MagicMock(status_code=500)
 
-    monkeypatch.setattr("builtins.print", fake_print)
     monkeypatch.setattr("requests.Session.post", fake_post)
 
     handler = HTTPLogHandler("http://localhost:8004", queue_size=10)
@@ -100,10 +94,15 @@ def test_worker_reports_non_2xx(monkeypatch):
 
     timeout = 2
     start = time.time()
-    while not printed and (time.time() - start) < timeout:
+    stderr_output = ""
+    while (time.time() - start) < timeout:
+        captured = capsys.readouterr()
+        stderr_output += captured.err
+        if "Failed to send log to central logger" in stderr_output:
+            break
         time.sleep(0.01)
 
-    assert any("Failed to send log to central logger" in p for p in printed)
+    assert "Failed to send log to central logger" in stderr_output
 
     handler._stopped.set()
     handler._worker.join(timeout=1)
