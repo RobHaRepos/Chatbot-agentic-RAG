@@ -24,7 +24,7 @@ npm run dev  # Runs on http://localhost:3000
 **Structure:**
 ```
 app/frontend/src/
-├── components/      # UI components (chat, layout, shared)
+├── components/     # UI components (chat, layout, shared)
 ├── pages/          # Routes (Chat, Vector Stores, Settings)
 ├── services/       # API layer (chat, TTS, logger)
 ├── store/          # State management (Zustand)
@@ -83,17 +83,13 @@ environment:
 
 ## Features
 
-✅ **Current:**
+✅ **Implemented:**
 - Chat interface with message history
-- Text-to-speech functionality
-- Loading states and error handling
+- Text-to-speech via [Kokoro TTS](https://github.com/RobHaRepos/TTS_kokoro.git)
+- Vector store management (create, delete, upload documents)
+- Prompt template management (create, edit, delete per-store templates)
+- Document management (view, edit, delete)
 - Multi-page navigation (Chat, Vector Stores, Settings)
-- Responsive dark theme
-
-🔜 **Planned:**
-- Vector store management (UI ready, needs backend API)
-- Settings configuration
-- Message persistence
 
 ## Troubleshooting
 

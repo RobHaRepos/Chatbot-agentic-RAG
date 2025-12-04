@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Database, ArrowLeft, FileText, Cpu, Hash, Upload, Trash2 } from 'lucide-react';
+import { Database, ArrowLeft, FileText, Cpu, Hash, Upload, Trash2, MessageSquare } from 'lucide-react';
 import { IconLabel } from '@/components/ui/icon-label';
 import { ErrorState } from '@/components/common';
 import { SkeletonCard } from '@/components/common/SkeletonCard';
@@ -13,6 +13,7 @@ import { UploadDocumentsModal } from '@/components/vector-stores/UploadDocuments
 import { CreateDocumentDialog } from '@/components/vector-stores/CreateDocumentDialog';
 import { DeleteStoreDialog } from '@/components/vector-stores/DeleteStoreDialog';
 import { DocumentList } from '@/components/vector-stores/DocumentList';
+import { TemplateList } from '@/components/templates';
 import { useStore } from '@/hooks/useVectorStores';
 import { useModal } from '@/hooks/useModal';
 
@@ -180,6 +181,20 @@ export function StoreDetailsPage() {
 
         {/* Retrieval Test - Using Reusable Component */}
         <RetrievalTestPanel storeId={store.id} />
+
+        {/* Prompt Templates */}
+        <Card>
+          <CardHeader>
+            <CardDescription>
+              <IconLabel icon={<MessageSquare className="h-4 w-4" />} gap="sm">
+                Prompt Templates
+              </IconLabel>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <TemplateList storeId={store.id} />
+          </CardContent>
+        </Card>
 
         {/* Document Management */}
         <Card>

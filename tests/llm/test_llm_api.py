@@ -1,34 +1,37 @@
-from fastapi.testclient import TestClient
-import requests
-import pytest
 from types import SimpleNamespace
-from app.llm import llm_api
-from tests.rag.test_retriever import _service_up
+
+import pytest
+import requests
+from fastapi.testclient import TestClient
+
+from app.llm.src import llm_api
+from tests.retriever.test_retriever import _service_up
 
 
 client = TestClient(llm_api.app)
 BASE_URL = "http://localhost:8002"
+DEFAULT_STORE_ID = 1
 
 
 def test_retrieve_or_respond(monkeypatch):
     """POST /retrieve_or_respond proxies to llm_service.retrieve_or_respond."""
-    monkeypatch.setattr(llm_api.llm_service, "retrieve_or_respond", lambda user_input: {"action": "retrieve"})
-    r = client.post("/retrieve_or_respond", json={"question": "test"})
+    monkeypatch.setattr(llm_api.llm_service, "retrieve_or_respond", lambda user_input, store_id: {"action": "retrieve"})
+    r = client.post("/retrieve_or_respond", json={"question": "test", "store_id": DEFAULT_STORE_ID})
     assert r.status_code == 200
     assert r.json()["action"] == "retrieve"
 
 
 def test_generate_answer_empty_question():
     """POST /generate_answer returns a friendly message if question is empty."""
-    r = client.post("/generate_answer", json={"question": ""})
+    r = client.post("/generate_answer", json={"question": "", "store_id": DEFAULT_STORE_ID})
     assert r.status_code == 200
     assert "need a question" in r.json()["answer"]
 
 
 def test_generate_answer_returns_json_string(monkeypatch):
     """Endpoint parses JSON-string output from AiChatService into dicts."""
-    monkeypatch.setattr(llm_api.llm_service, "generate_answer", lambda user_input, retrieved_information, context: "{\"action\": \"clarify\", \"answer\": \"please clarify\"}")
-    r = client.post("/generate_answer", json={"question": "x", "documents": "", "context": ""})
+    monkeypatch.setattr(llm_api.llm_service, "generate_answer", lambda user_input, retrieved_information, context, store_id: "{\"action\": \"clarify\", \"answer\": \"please clarify\"}")
+    r = client.post("/generate_answer", json={"question": "x", "documents": "", "context": "", "store_id": DEFAULT_STORE_ID})
     assert r.status_code == 200
     assert isinstance(r.json(), dict)
     assert r.json()["action"] == "clarify"
@@ -36,8 +39,8 @@ def test_generate_answer_returns_json_string(monkeypatch):
 
 def test_generate_answer_returns_plain_string(monkeypatch):
     """Endpoint returns a plain string if LLM returns non-JSON text."""
-    monkeypatch.setattr(llm_api.llm_service, "generate_answer", lambda user_input, retrieved_information, context: "Plain answer")
-    r = client.post("/generate_answer", json={"question": "x", "documents": "", "context": ""})
+    monkeypatch.setattr(llm_api.llm_service, "generate_answer", lambda user_input, retrieved_information, context, store_id: "Plain answer")
+    r = client.post("/generate_answer", json={"question": "x", "documents": "", "context": "", "store_id": DEFAULT_STORE_ID})
     assert r.status_code == 200
     assert isinstance(r.json(), str)
 
@@ -111,7 +114,7 @@ def test_ready_endpoint():
 @pytest.mark.skipif(not _service_up(url=BASE_URL), reason="LLM service is not running")
 def test_retrieve_or_respond_retrieve():
     """Integration: /retrieve_or_respond returns retrieve action when appropriate."""
-    payload = {"question": "What is the newest Iphone?"}
+    payload = {"question": "What is the newest Iphone?", "store_id": DEFAULT_STORE_ID}
     resp = requests.post(f"{BASE_URL}/retrieve_or_respond", json=payload)
     assert resp.status_code == 200
     j = resp.json()
@@ -121,7 +124,7 @@ def test_retrieve_or_respond_retrieve():
 @pytest.mark.skipif(not _service_up(url=BASE_URL), reason="LLM service is not running")
 def test_retrieve_or_respond_clarify():
     """Integration: /retrieve_or_respond returns clarify for non phone queries."""
-    payload = {"question": "What is the capital of France?"}
+    payload = {"question": "What is the capital of France?", "store_id": DEFAULT_STORE_ID}
     resp = requests.post(f"{BASE_URL}/retrieve_or_respond", json=payload)
     assert resp.status_code == 200
     j = resp.json()
@@ -133,7 +136,8 @@ def test_generate_answer_endpoint():
     """Integration: /generate_answer returns an LLM-generated string answer."""
     payload = {
         "question": "What is the newest Iphone?",
-        "context": "Iphone 16 MAX, Release: September 2024, Feature: 6.7-inch display, improved camera system."
+        "context": "Iphone 16 MAX, Release: September 2024, Feature: 6.7-inch display, improved camera system.",
+        "store_id": DEFAULT_STORE_ID
     }
     resp = requests.post(f"{BASE_URL}/generate_answer", json=payload)
     assert resp.status_code == 200

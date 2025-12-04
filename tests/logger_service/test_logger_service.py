@@ -1,7 +1,9 @@
-from app.logger_service import logger_service
-from fastapi.testclient import TestClient
 import importlib
 import logging
+
+from fastapi.testclient import TestClient
+
+from app.logger_service import logger_service
 
 client = TestClient(logger_service.app)
 
