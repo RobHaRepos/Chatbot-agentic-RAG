@@ -6,6 +6,13 @@ A microservices-based RAG chatbot using LangGraph for workflow orchestration, FA
 
 **Tech Stack:** Python 3.13 | FastAPI | LangGraph | FAISS | HuggingFace Transformers | OpenAI | Docker Compose
 
+## Frontend
+
+<img width="1864" height="1002" alt="grafik" src="https://github.com/user-attachments/assets/bcbb666a-7c97-400e-b502-18eeddd1f8fd" />
+<img width="1854" height="767" alt="grafik" src="https://github.com/user-attachments/assets/bcb987a8-1f92-4a84-b14e-f0bf23455f2a" />
+
+
+
 ## Architecture
 
 **Services:**
