@@ -18,7 +18,7 @@ COPY tailwind.config.js postcss.config.js components.json ./
 RUN npm run build
 
 # Production stage with nginx
-FROM nginx:alpine
+FROM nginx:1.29.5-alpine3.23
 
 # Set ownership for nginx user (nginx user already exists in nginx:alpine image)
 RUN chown -R nginx:nginx /var/cache/nginx && \
